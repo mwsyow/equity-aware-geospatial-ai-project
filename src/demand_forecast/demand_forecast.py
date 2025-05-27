@@ -7,6 +7,7 @@ from enum import StrEnum
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
+CUT_OFF_YEAR = 2021
 YEAR = 'time'
 REGION_CODE = '1_variable_attribute_code'
 VALUE = 'value'
@@ -53,10 +54,13 @@ def df_elderly_population() -> pd.DataFrame:
     
     # transform date from `year-month-day` to `year` format
     df[YEAR] = df[YEAR].map(lambda x : int(x.split('-')[0]))
-
+    
     # change elements on `value` column to integer
     df[VALUE] = pd.to_numeric(df[VALUE], errors='coerce')
     df = df[~df[VALUE].isna()]
+    
+    # only consider year before or equal than CUT_OFF_YEAR
+    df = df[df[YEAR] <= CUT_OFF_YEAR].reset_index(drop=True)
     
     grouped_df = df.groupby([YEAR, REGION_CODE, DISTRICT_CODE], as_index=False)[VALUE].sum()
     return grouped_df
@@ -82,6 +86,9 @@ def df_hospital_inpatients() -> pd.DataFrame:
     df[VALUE] = pd.to_numeric(df[VALUE], errors='coerce')
     df = df[~df[VALUE].isna()]
     
+    # only consider year before or equal than CUT_OFF_YEAR
+    df = df[df[YEAR] <= CUT_OFF_YEAR].reset_index(drop=True)
+    
     return df
 
 def df_population_history() -> pd.DataFrame:
@@ -91,6 +98,10 @@ def df_population_history() -> pd.DataFrame:
     df = df[DF_FIELDS]
     # transform date from `year-month-day` to `year` format
     df[YEAR] = df[YEAR].map(lambda x : int(x.split('-')[0]))
+    
+    # only consider year before or equal than CUT_OFF_YEAR
+    df = df[df[YEAR] <= CUT_OFF_YEAR].reset_index(drop=True)
+    
     return df
     
 def df_population_projection(variant: ProjectionVariant) -> pd.DataFrame:
@@ -105,6 +116,7 @@ def df_population_projection(variant: ProjectionVariant) -> pd.DataFrame:
     
     # transform value from per 1000 people
     df[VALUE] = df[VALUE].map(lambda x: x*1000)
+    
     return df
 
 def df_per_capita_demand() -> pd.DataFrame:
