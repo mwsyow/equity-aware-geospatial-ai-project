@@ -12,6 +12,7 @@ REGION_CODE = '1_variable_attribute_code'
 VALUE = 'value'
 ICD_VARIANT = '2_variable_attribute_label'
 PROJECTION_VARIANT = '2_variable_attribute_code'
+DISTRICT_CODE = 'district_code'
 
 DF_FIELDS = [YEAR, REGION_CODE, VALUE]
 
@@ -41,6 +42,35 @@ REGION_CODE_MAPPING = {
     7: 'Rheinland-Pfalz'
 }
 
+def df_elderly_population() -> pd.DataFrame:
+    path = 'data/elderly_population.csv'
+    df = pd.read_csv(path, sep=';')
+    
+    # in the dataset column `1_variable_attribute_code` is populated with district code not region code
+    # unify the format with other dataset 
+    df[DISTRICT_CODE] = df["1_variable_attribute_code"]
+    df[REGION_CODE] = df["1_variable_attribute_code"].map(lambda x: int(x/1000))
+    
+    # transform date from `year-month-day` to `year` format
+    df[YEAR] = df[YEAR].map(lambda x : int(x.split('-')[0]))
+
+    # change elements on `value` column to integer
+    df[VALUE] = pd.to_numeric(df[VALUE], errors='coerce')
+    df = df[~df[VALUE].isna()]
+    
+    grouped_df = df.groupby([YEAR, REGION_CODE, DISTRICT_CODE], as_index=False)[VALUE].sum()
+    return grouped_df
+
+def df_elderly_population_per_region(region_code:int) -> pd.DataFrame:
+    dfep = df_elderly_population()
+    elderly_population = dfep[dfep[REGION_CODE]==region_code]
+    elderly_population = elderly_population.pivot(
+        index=DISTRICT_CODE,
+        columns=YEAR,
+        values=VALUE
+    )
+    return elderly_population
+    
 def df_hospital_inpatients() -> pd.DataFrame:
     path = os.path.join(DATA_PATH, 'hospital_inpatients.csv')
     df = pd.read_csv(path, sep=';')
@@ -49,7 +79,9 @@ def df_hospital_inpatients() -> pd.DataFrame:
     df = df[DF_FIELDS]
     
     # change elements on `value` column to integer
-    df[VALUE] = df[VALUE].map(lambda x: int(x))
+    df[VALUE] = pd.to_numeric(df[VALUE], errors='coerce')
+    df = df[~df[VALUE].isna()]
+    
     return df
 
 def df_population_history() -> pd.DataFrame:
@@ -107,7 +139,7 @@ def df_per_capita_demand() -> pd.DataFrame:
 
     return df
 
-def grid_search_ARIMA(per_capita_demand: pd.Series, p_values: list, d_values: list, q_values: list):
+def grid_search_ARIMA(series: pd.Series, p_values: list, d_values: list, q_values: list):
     # Grid search over (p,d,q)
     best_aic = float('inf')
     best_order = None
@@ -117,7 +149,7 @@ def grid_search_ARIMA(per_capita_demand: pd.Series, p_values: list, d_values: li
         for d in d_values:
             for q in q_values:
                 try:
-                    model = ARIMA(per_capita_demand, order=(p, d, q))
+                    model = ARIMA(series, order=(p, d, q))
                     model_fit = model.fit()
                     aic = model_fit.aic
                     print(f'ARIMA({p},{d},{q}) AIC={aic:.2f}')
