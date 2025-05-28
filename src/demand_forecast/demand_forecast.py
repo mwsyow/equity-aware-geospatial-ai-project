@@ -43,6 +43,31 @@ REGION_CODE_MAPPING = {
     7: 'Rheinland-Pfalz'
 }
 
+SAARLAND_DISTRICT_MAPPING = {
+    "Saarlouis County": 10044,
+    "Sankt Wendel County": 10046,
+    "Saarpfalz-Kreis County": 10045,
+    "Merzig-Wadern County": 10042,
+    "Neunkirchen County": 10043,
+    "Stadtverband Saarbrücken County": 10041 
+}
+
+def df_diseases_history() -> pd.DataFrame:
+    df = pd.read_csv(os.path.join(DATA_PATH, 'diseases_history.csv'), sep='\t', encoding='utf-16')
+    df = df.reset_index()
+    col = df.iloc[0]
+    col.iloc[0] = DISTRICT_CODE
+    col.iloc[1:] = col.iloc[1:].map(lambda x: int(x.split('/')[0]))
+    df.columns = col
+    df = df.drop(df.index[0]).reset_index(drop=True)
+    df = df.drop(columns=[col for col in df.columns if isinstance(col, int) and col > 2021])
+    return df
+
+def df_saarland_diseases_history() -> pd.DataFrame:
+    df = df_diseases_history()
+    df = df[df[DISTRICT_CODE] in SAARLAND_DISTRICT_MAPPING]
+
+
 def df_elderly_population() -> pd.DataFrame:
     path = 'data/elderly_population.csv'
     df = pd.read_csv(path, sep=';')
