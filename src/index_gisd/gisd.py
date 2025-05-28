@@ -65,6 +65,7 @@ def run() -> pd.DataFrame:
       2) Filter to 2021 and Saarland AGS
       3) Normalize values
       4) Save output CSV
+      5) Return dict of {AGS: gisd_norm}
     """
     os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -81,7 +82,7 @@ def run() -> pd.DataFrame:
     norm_df.to_csv(OUT_CSV, index=False)
     print(f"[GISD] Wrote {len(norm_df)} Saarland districts to {OUT_CSV}")
 
-    return norm_df
+    return dict(zip(norm_df["AGS"], norm_df["gisd_norm"]))
 
 if __name__ == "__main__":
     run()
