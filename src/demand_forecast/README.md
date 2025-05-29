@@ -92,7 +92,7 @@ To account for forecast uncertainty:
 4. **Normalize** $I_i$ to \[0,1]:
 
    $$
-   \hat{I}_i = \frac{I_i - \min_t I_i}{\max_t I_i - \min_t I_i}.
+   \tilde{I}_{i} = \frac{I_{i}}{\sum_j I_{j}}.
    $$
 
 ---
