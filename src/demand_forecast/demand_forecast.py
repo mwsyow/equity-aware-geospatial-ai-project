@@ -61,12 +61,19 @@ def df_diseases_history() -> pd.DataFrame:
     df.columns = col
     df = df.drop(df.index[0]).reset_index(drop=True)
     df = df.drop(columns=[col for col in df.columns if isinstance(col, int) and col > 2021])
+    year_cols = [col for col in df.columns if isinstance(col, int)]
+    df[year_cols] = df[year_cols].apply(pd.to_numeric, errors='coerce')
+    
     return df
 
 def df_saarland_diseases_history() -> pd.DataFrame:
     df = df_diseases_history()
-    df = df[df[DISTRICT_CODE] in SAARLAND_DISTRICT_MAPPING]
-
+    df = df[df[DISTRICT_CODE].isin(SAARLAND_DISTRICT_MAPPING)]
+    df[DISTRICT_CODE] = df[DISTRICT_CODE].map(lambda x: SAARLAND_DISTRICT_MAPPING[x])
+    df.index = df[DISTRICT_CODE]
+    df=df.drop(columns=[DISTRICT_CODE])
+    df.columns = df.columns.astype(int)
+    return df
 
 def df_elderly_population() -> pd.DataFrame:
     path = 'data/elderly_population.csv'
@@ -195,7 +202,8 @@ def grid_search_ARIMA(series: pd.Series, p_values: list, d_values: list, q_value
                         best_order = (p, d, q)
                         best_model = model_fit
                         print(f'Current best order ({p},{d},{q})')
-                except:
+                except Exception as e:
+                    print(str(e))
                     continue
                 
     return best_model, best_order
@@ -236,3 +244,87 @@ def forecast_demand(
         return demand, demand_conf_int
     
     return demand
+
+def forecast_diseases_history(df: pd.DataFrame, period: int, p_values: list, d_values: list, q_values: list) -> tuple[pd.DataFrame, pd.DataFrame]:
+    combined_dfs = []
+    combined_conf_ints = []
+    for district_code in df.index:
+        disease_history = df.loc[district_code]
+        best_model, _ = grid_search_ARIMA(
+            disease_history, 
+            p_values=p_values, 
+            d_values=d_values, 
+            q_values=q_values
+        )
+        forecast_disease_history, conf_int = forecast_ARIMA(best_model, period)
+        # turns year index into a column
+        df_forecast_disease_history = forecast_disease_history.to_frame().rename(columns={'predicted_mean': VALUE})
+        df_forecast_disease_history[DISTRICT_CODE] = district_code
+        combined_dfs.append(df_forecast_disease_history)
+        
+        conf_int.columns = ['lower', 'upper']
+        conf_int[DISTRICT_CODE] = district_code
+        combined_conf_ints.append(conf_int)
+
+    final_df = pd.concat(combined_dfs)
+    final_conf_int = pd.concat(combined_conf_ints)
+    return final_df, final_conf_int
+
+def forecast_demand_per_district_in_saarland() -> dict:
+    region_code = 10
+    period = 9
+    
+    dfpcd = df_per_capita_demand()
+    
+    per_capita_demand = dfpcd.loc[region_code]
+
+    best_model, _ = grid_search_ARIMA(
+        per_capita_demand, 
+        p_values=[3], 
+        d_values=[0], 
+        q_values=[0]
+    )
+    
+    forecast, conf_int = forecast_ARIMA(best_model, period)
+    demand, _ = forecast_demand(forecast, region_code, ProjectionVariant.VAR01, conf_int)
+    
+    df = df_saarland_diseases_history()
+    forecast_diseases, diseases_conf_int = forecast_diseases_history(df, period, [1], [1], [0])
+    forecast_diseases = forecast_diseases.reset_index().rename(columns={'index': YEAR})
+    forecast_diseases = forecast_diseases.pivot(
+        index=DISTRICT_CODE,
+        columns=YEAR,
+        values=VALUE
+    )
+    diseases_conf_int = diseases_conf_int.reset_index().rename(columns={'index': YEAR})
+    upper_conf_int = diseases_conf_int.pivot(
+        index=DISTRICT_CODE,
+        columns=YEAR,
+        values='upper'
+    )
+    lower_conf_int = diseases_conf_int.pivot(
+        index=DISTRICT_CODE,
+        columns=YEAR,
+        values='lower'
+    )
+    forecast_diseases_standardized = forecast_diseases.div(forecast_diseases.sum(axis=0), axis=1)
+
+    demand_per_district = forecast_diseases_standardized.mul(demand, axis=1)
+    # Step 1: Compute relative width of interval
+    interval_width = upper_conf_int - lower_conf_int
+    relative_width = interval_width / forecast_diseases
+
+    # Step 2: Convert to confidence (invert width)
+    confidence_df = 1 - relative_width
+    # Optional: clip negative values (in case intervals are huge)
+    confidence_df = confidence_df.clip(lower=0)
+    # Step 3: Compute confidence-weighted index
+    weighted_values = demand_per_district * confidence_df
+    weighted_sum = weighted_values.sum(axis=1)
+    total_confidence = confidence_df.sum(axis=1)
+    confidence_weighted_index = weighted_sum / total_confidence
+
+    # # Step 4: Normalize to 0–1
+    normalized_index = confidence_weighted_index.map(lambda x: x/confidence_weighted_index.sum())
+    result = normalized_index.to_dict()
+    return result
