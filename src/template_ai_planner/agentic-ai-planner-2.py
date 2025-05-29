@@ -4,6 +4,13 @@ import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
+#EquityIndex = w1 x DemandForecastingIndex + w2 x GISD-Index + w3 x TravelTimeIndex + w4 x AccesibilityIndex
+
+# where AccesibilityIndex = w5 x ElderlyShare + w6 x HospitalCapacityIndex
+# This formula is applicable at a district level
+
+#Higher value of EquityIndex should mean worse equity and vice versa
+
 class AgenticPlanner:
     def __init__(self, hospitals, districts, travel_time,
                  budget_beds, max_open_sites, alpha=0.7, max_travel=30):
