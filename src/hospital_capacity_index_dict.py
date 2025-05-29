@@ -1,8 +1,8 @@
-### Step 1: Compute Adjusted Beds per District
+# Step 1: Compute Adjusted Beds per District
 
 # AdjBeds₍d₎ = Beds₍d₎ ÷ Population₍d₎
 
-### Step 2: Normalize & Invert to get Hospital Capacity Index
+# Step 2: Normalize & Invert to get Hospital Capacity Index
 
 # HospitalCapacityIndex₍d₎ = 1 − (AdjBeds₍d₎ − min(AdjBeds)) ÷ (max(AdjBeds) − min(AdjBeds))
 
