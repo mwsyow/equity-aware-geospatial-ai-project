@@ -325,6 +325,6 @@ def forecast_demand_per_district_in_saarland() -> dict:
     confidence_weighted_index = weighted_sum / total_confidence
 
     # # Step 4: Normalize to 0–1
-    normalized_index = confidence_weighted_index.map(lambda x: x/confidence_weighted_index.sum())
+    normalized_index = confidence_weighted_index.map(lambda x: 1 - x/confidence_weighted_index.sum())
     result = normalized_index.to_dict()
     return result

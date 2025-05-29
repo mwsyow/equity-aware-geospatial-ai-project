@@ -89,10 +89,10 @@ To account for forecast uncertainty:
    $$
    I_i = \frac{S_i}{W_i}.
    $$
-4. **Normalize** $I_i$ to \[0,1]:
+4. **Normalize and Invert** $I_i$ to \[0,1]:
 
    $$
-   \tilde{I}_{i} = \frac{I_{i}}{\sum_j I_{j}}.
+   \tilde{I}_{i} = 1 - \frac{I_{i}}{\sum_j I_{j}}.
    $$
 
 ---
