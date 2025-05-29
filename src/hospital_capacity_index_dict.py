@@ -1,13 +1,10 @@
 ### Step 1: Compute Adjusted Beds per District
 
-AdjBeds<sub>d</sub> = Beds<sub>d</sub> / Population<sub>d</sub>
-
----
+# AdjBeds₍d₎ = Beds₍d₎ ÷ Population₍d₎
 
 ### Step 2: Normalize & Invert to get Hospital Capacity Index
 
-HospitalCapacityIndex<sub>d</sub> = 1 − (AdjBeds<sub>d</sub> − min(AdjBeds)) / (max(AdjBeds) − min(AdjBeds))
-HospitalCapacityIndex<sub>d</sub> = 1 − (AdjBeds<sub>d</sub> − min(AdjBeds)) / (max(AdjBeds) − min(AdjBeds))
+# HospitalCapacityIndex₍d₎ = 1 − (AdjBeds₍d₎ − min(AdjBeds)) ÷ (max(AdjBeds) − min(AdjBeds))
 
 import pandas as pd
 
