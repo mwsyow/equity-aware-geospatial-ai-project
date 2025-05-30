@@ -18,6 +18,10 @@ DISTRICT_CODE = 'district_code'
 DF_FIELDS = [YEAR, REGION_CODE, VALUE]
 
 class ProjectionVariant(StrEnum):
+    """Population projection variants for demographic forecasting.
+    
+    Enumeration of different population projection scenarios used by the demographic model.
+    """
     VAR01 = 'BEV-VARIANTE-01'
     VAR02 = 'BEV-VARIANTE-02'
     VAR03 = 'BEV-VARIANTE-03'
@@ -53,6 +57,15 @@ SAARLAND_DISTRICT_MAPPING = {
 }
 
 def df_diseases_history() -> pd.DataFrame:
+    """Load and process historical disease data from CSV file.
+    
+    Returns
+    -------
+    pd.DataFrame
+        Processed DataFrame containing historical disease data with district codes as rows
+        and years as columns. Years after 2021 are dropped and numeric values are converted
+        to proper data types.
+    """
     df = pd.read_csv(os.path.join(DATA_PATH, 'diseases_history.csv'), sep='\t', encoding='utf-16')
     df = df.reset_index()
     col = df.iloc[0]
@@ -67,6 +80,14 @@ def df_diseases_history() -> pd.DataFrame:
     return df
 
 def df_saarland_diseases_history() -> pd.DataFrame:
+    """Extract and process disease history data specifically for Saarland districts.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing disease history for Saarland districts only, with district
+        codes mapped to standard identifiers and years as integer columns.
+    """
     df = df_diseases_history()
     df = df[df[DISTRICT_CODE].isin(SAARLAND_DISTRICT_MAPPING)]
     df[DISTRICT_CODE] = df[DISTRICT_CODE].map(lambda x: SAARLAND_DISTRICT_MAPPING[x])
@@ -76,6 +97,13 @@ def df_saarland_diseases_history() -> pd.DataFrame:
     return df
 
 def df_elderly_population() -> pd.DataFrame:
+    """Load and process elderly population data.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing elderly population statistics 
+    """
     path = 'data/elderly_population.csv'
     df = pd.read_csv(path, sep=';')
     
@@ -98,6 +126,19 @@ def df_elderly_population() -> pd.DataFrame:
     return grouped_df
 
 def df_elderly_population_per_region(region_code:int) -> pd.DataFrame:
+    """Extract elderly population data for a specific region.
+    
+    Parameters
+    ----------
+    region_code : int
+        Code identifying the region of interest
+
+    Returns
+    -------
+    pd.DataFrame
+        Pivoted DataFrame with district codes as index and years as columns,
+        containing elderly population values.
+    """
     dfep = df_elderly_population()
     elderly_population = dfep[dfep[REGION_CODE]==region_code]
     elderly_population = elderly_population.pivot(
@@ -108,6 +149,14 @@ def df_elderly_population_per_region(region_code:int) -> pd.DataFrame:
     return elderly_population
     
 def df_hospital_inpatients() -> pd.DataFrame:
+    """Load and process hospital inpatient data.
+    
+    Returns
+    -------
+    pd.DataFrame
+        Processed DataFrame containing hospital inpatient statistics up to CUT_OFF_YEAR,
+        filtered for total values across all ICD variants.
+    """
     path = os.path.join(DATA_PATH, 'hospital_inpatients.csv')
     df = pd.read_csv(path, sep=';')
     
@@ -124,6 +173,14 @@ def df_hospital_inpatients() -> pd.DataFrame:
     return df
 
 def df_population_history() -> pd.DataFrame:
+    """Load and process historical population data.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing historical population statistics up to CUT_OFF_YEAR
+        with standardized year format.
+    """
     path = os.path.join(DATA_PATH, 'population_history.csv')
     df = pd.read_csv(path, sep=';')
     
@@ -137,6 +194,19 @@ def df_population_history() -> pd.DataFrame:
     return df
     
 def df_population_projection(variant: ProjectionVariant) -> pd.DataFrame:
+    """Load and process population projection data for a specific variant.
+    
+    Parameters
+    ----------
+    variant : ProjectionVariant
+        The population projection variant to use
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing population projections with values scaled from 
+        per 1000 people to absolute numbers.
+    """
     path = os.path.join(DATA_PATH, 'population_projection.csv')
     df = pd.read_csv(path, sep=';')
     
@@ -152,6 +222,19 @@ def df_population_projection(variant: ProjectionVariant) -> pd.DataFrame:
     return df
 
 def df_per_capita_demand() -> pd.DataFrame:
+    """Calculate per capita demand based on hospital inpatients and population history.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing per capita demand values with regions as rows and years
+        as columns.
+    
+    Raises
+    ------
+    AssertionError
+        If years don't match between datasets or if number of datapoints is inconsistent.
+    """
     df_inp = df_hospital_inpatients()
     df_pophist = df_population_history()
     df_inp = df_inp.sort_values(YEAR)
@@ -184,6 +267,24 @@ def df_per_capita_demand() -> pd.DataFrame:
     return df
 
 def grid_search_ARIMA(series: pd.Series, p_values: list, d_values: list, q_values: list):
+    """Perform grid search to find optimal ARIMA parameters.
+    
+    Parameters
+    ----------
+    series : pd.Series
+        Time series data to model
+    p_values : list
+        List of p values to try 
+    d_values : list
+        List of d values to try 
+    q_values : list
+        List of q values to try 
+
+    Returns
+    -------
+    tuple
+        Best fitting ARIMA model and its order (p,d,q)
+    """
     # Grid search over (p,d,q)
     best_aic = float('inf')
     best_order = None
@@ -209,6 +310,20 @@ def grid_search_ARIMA(series: pd.Series, p_values: list, d_values: list, q_value
     return best_model, best_order
 
 def forecast_ARIMA(model, period: int) -> tuple[pd.Series, pd.DataFrame]:
+    """Generate forecasts using fitted ARIMA model.
+    
+    Parameters
+    ----------
+    model : ARIMA model
+        Fitted ARIMA model
+    period : int
+        Number of periods to forecast
+
+    Returns
+    -------
+    tuple
+        Predicted mean values and confidence intervals
+    """
     pred = model.get_forecast(period)
     conf_int = pred.conf_int()
     pred_mean = pred.predicted_mean
@@ -222,6 +337,29 @@ def forecast_demand(
     proj_variant: ProjectionVariant, 
     conf_int: pd.DataFrame=None
 ) -> pd.Series | tuple[pd.Series, pd.DataFrame]:
+    """Calculate demand forecast based on population projections.
+    
+    Parameters
+    ----------
+    forecast : pd.Series
+        Forecasted values
+    region_code : int
+        Region code for the forecast
+    proj_variant : ProjectionVariant
+        Population projection variant to use
+    conf_int : pd.DataFrame, optional
+        Confidence intervals for the forecast
+
+    Returns
+    -------
+    pd.Series or tuple
+        Demand forecast, and optionally confidence intervals
+    
+    Raises
+    ------
+    AssertionError
+        If region code is invalid
+    """
     assert region_code in REGION_CODE_MAPPING, f"code {region_code} is invalid"
     df = df_population_projection(proj_variant)
     df = df[
@@ -245,7 +383,29 @@ def forecast_demand(
     
     return demand
 
-def forecast_diseases_history(df: pd.DataFrame, period: int, p_values: list, d_values: list, q_values: list) -> tuple[pd.DataFrame, pd.DataFrame]:
+def forecast_diseases_history(df: pd.DataFrame, period: int, 
+                            p_values: list, d_values: list, 
+                            q_values: list) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Generate disease history forecasts using ARIMA models.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Historical disease data
+    period : int
+        Number of periods to forecast
+    p_values : list
+        List of p values for ARIMA
+    d_values : list
+        List of d values for ARIMA
+    q_values : list
+        List of q values for ARIMA
+
+    Returns
+    -------
+    tuple
+        Forecasted values and confidence intervals for each district
+    """
     combined_dfs = []
     combined_conf_ints = []
     for district_code in df.index:
@@ -271,6 +431,16 @@ def forecast_diseases_history(df: pd.DataFrame, period: int, p_values: list, d_v
     return final_df, final_conf_int
 
 def forecast_demand_per_district_in_saarland() -> dict:
+    """Generate demand forecasts for districts in Saarland.
+    
+    Calculates demand forecasts using ARIMA models and population projections,
+    incorporating confidence-weighted indices for each district.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping district codes to normalized demand indices
+    """
     region_code = 10
     period = 9
     

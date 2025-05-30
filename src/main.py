@@ -38,6 +38,18 @@ INDEX_FUNC_MAP = {
 }
 
 def assemble_indexes() -> pd.DataFrame:
+    """
+    Assembles all individual indexes into a combined DataFrame.
+    
+    The function iterates through the INDEX_FUNC_MAP, calls each index calculation function,
+    and combines the results into a single DataFrame.
+    
+    Returns:
+        pd.DataFrame: Combined DataFrame where:
+            - Rows are districts
+            - Columns are different indexes (forecast_demand, elderly_share, etc.)
+            - Values are the calculated index values for each district
+    """
     combinded_df = []
     for index in INDEX_FUNC_MAP.values():
         res = index()
@@ -50,23 +62,22 @@ def assemble_indexes() -> pd.DataFrame:
     df.columns = list(INDEX_FUNC_MAP.keys())
     return df
 
-#EquityIndex = w1 x DemandForecastingIndex + w2 x GISD-Index + w3 x TravelTimeIndex + w4 x AccesibilityIndex
-
-# where AccesibilityIndex = w5 x ElderlyShare + w6 x HospitalCapacityIndex
-# This formula is applicable at a district level
-
-#Higher value of EquityIndex should mean worse equity and vice versa
-
 def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
     """
-    Calculate the Equity Index based on the provided index DataFrame and weights.
+    Calculate the Equity Index based on weighted combinations of individual indexes.
     
-    Parameters:
-        index_df (pd.DataFrame): DataFrame containing the index values.
-        weights (dict): Dictionary containing the weights for each index.
-        
+    The equity index is calculated as:
+    EquityIndex = w1*DemandForecast + w2*GISD + w3*TravelTime + w4*Accessibility
+    where Accessibility = w5*ElderlyShare + w6*HospitalCapacity
+    
+    Higher values indicate worse equity conditions.
+    
+    Args:
+        index_df (pd.DataFrame): DataFrame containing the index values for each district
+        weights (dict): Dictionary mapping Index enum values to their respective weights
+    
     Returns:
-        pd.Series: Equity Index values for each district.
+        pd.Series: Equity Index values for each district
     """
     equity = []
     for district, index in index_df.iterrows():
@@ -90,13 +101,32 @@ def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
 
 def centroid() -> pd.Series:
     """
-    Returns a Series with AGS_CODE as index and centroid coordinates as values.
+    Calculate the centroid coordinates for each district.
+    
+    Retrieves district centroids from the travel time and centroid module
+    and converts them to Shapely Point objects.
+    
+    Returns:
+        pd.Series: District centroids where:
+            - Index: AGS_CODE (district identifier)
+            - Values: Shapely Point objects containing (longitude, latitude)
     """
     centroids = get_centroids()
     centroid_series = pd.Series({k: Point(v["lon"], v["lat"]) for k, v in centroids.items()})
     return centroid_series
 
 def current_hospital_demand() -> pd.Series:
+    """
+    Calculate current hospital demand based on historical inpatient data.
+    
+    Processes hospital inpatient data and disease history to calculate
+    the current demand distribution across districts.
+    
+    Returns:
+        pd.Series: Current hospital demand where:
+            - Index: District identifiers as strings
+            - Values: Calculated demand values for each district
+    """
     dfhi = df_hospital_inpatients()
     curr_saarland_hospital_inpatients = dfhi[(dfhi[YEAR]==CUT_OFF_YEAR) & (dfhi[REGION_CODE]==10)][VALUE].values[0]
     dfdsh = df_saarland_diseases_history()
@@ -107,14 +137,24 @@ def current_hospital_demand() -> pd.Series:
 
 def main():
     """
-        Initialize planner with:
-        - hospitals: DataFrame with SiteID, HospitalAddress, Lon, Lat, MaxBeds
-        - districts: DataFrame with AGS_CODE, Demand, EquityIndex, centroid (geometry)
-        - travel_time: dict of dicts: travel_time[site][district] in minutes
-        - budget_beds: total beds available to allocate
-        - max_open_sites: max hospitals that can be open simultaneously
-        - alpha: weight for cost vs equity penalty in objective
-        - max_travel: max travel time threshold (minutes)
+    Main entry point for the equity-aware hospital planning system.
+    
+    Workflow:
+    1. Loads hospital and district data
+    2. Assembles equity indexes with weights
+    3. Calculates current demand
+    4. Initializes AI planner with parameters:
+        - hospitals: DataFrame with hospital information
+        - districts: GeoDataFrame with district metrics
+        - travel_time: Matrix of travel times between sites
+        - budget_beds: Total beds available (1000)
+        - max_open_sites: Maximum number of hospitals (2)
+        - alpha: Cost vs equity weight (0.6)
+        - max_travel: Maximum travel time in minutes (30)
+    5. Runs optimization
+    6. Visualizes results on map
+    
+    The function saves the resulting map visualization to the results directory.
     """
     hospitals_df = get_hospital_df()
     hospitals_df = hospitals_df.set_index("SiteID")
