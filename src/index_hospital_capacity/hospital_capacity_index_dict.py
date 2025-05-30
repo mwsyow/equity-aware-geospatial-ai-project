@@ -5,7 +5,7 @@
 # Step 2: Normalize & Invert to get Hospital Capacity Index
 
 # HospitalCapacityIndex₍d₎ = 1 − (AdjBeds₍d₎ − min(AdjBeds)) ÷ (max(AdjBeds) − min(AdjBeds))
-
+import os
 import pandas as pd
 
 SAARLAND_AGS = [
@@ -18,14 +18,14 @@ SAARLAND_AGS = [
 ]
 
 REGION_CODE = 10  # Saarland Land code  
-
+DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 
 def load_hospital_data() -> pd.DataFrame:
     """
     Loads the hospital dataset from Excel, finds the header row dynamically,
     filters for a specific Land code, and returns a DataFrame with 'region', 'district', and 'beds'.
     """
-    file_path = "../data/Krankenhausverzeichnis_2021.xlsx"
+    file_path = os.path.join(DATA_PATH, "Krankenhausverzeichnis_2021.xlsx")
     xl = pd.ExcelFile(file_path, engine="openpyxl")
     sheet_df = xl.parse("KHV_2021", header=None)
 
@@ -51,7 +51,7 @@ def load_population_data() -> pd.DataFrame:
     Loads population data, finds the header row dynamically,
     filters for a specific Land code, and returns a DataFrame with 'district' and 'population'.
     """
-    file_path = "../data/District-Population.xlsx"
+    file_path = file_path = os.path.join(DATA_PATH, "District-Population.xlsx")
     xl = pd.ExcelFile(file_path, engine="openpyxl")
     sheet_df = xl.parse(xl.sheet_names[0], header=None)
 
