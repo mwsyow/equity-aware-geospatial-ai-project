@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point
 from bayes_opt import BayesianOptimization
 
-
 COST_PER_BED = 1500  # Example cost per bed 
 
 class AgenticPlanner:
