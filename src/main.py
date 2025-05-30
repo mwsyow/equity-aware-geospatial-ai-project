@@ -16,7 +16,9 @@ from index_elderly_share.elderly_share import run as run_elderly_share
 from index_gisd.gisd import run as run_gisd
 from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
 from index_travel_accessibility.TAI import RUN as run_travel_time_index
-
+from index_travel_accessibility.travel_time_and_centroid import (
+    get_centroids, get_hospital_df, get_travel_time_matrix
+)
 class Index(StrEnum):
     FORECAST_DEMAND = "forecast_demand_index"
     ELDERLY_SHARE = "elderly_share_index"
@@ -84,18 +86,27 @@ def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
     
     return equity_index
 
+def centroid() -> pd.Series:
+    """
+    Returns a Series with AGS_CODE as index and centroid coordinates as values.
+    """
+    centroids = get_centroids()
+    centroid_series = pd.Series({k: Point(v["lon"], v["lat"]) for k, v in centroids.items()})
+    return centroid_series
+
 def current_hospital_demand() -> pd.Series:
     dfhi = df_hospital_inpatients()
     curr_saarland_hospital_inpatients = dfhi[(dfhi[YEAR]==CUT_OFF_YEAR) & (dfhi[REGION_CODE]==10)][VALUE].values[0]
     dfdsh = df_saarland_diseases_history()
     dfdsh = dfdsh[CUT_OFF_YEAR].map(lambda x: x/dfdsh[CUT_OFF_YEAR].sum())
     curr_demand = dfdsh * curr_saarland_hospital_inpatients
+    curr_demand.index = [str(i) for i in curr_demand.index]
     return curr_demand
 
 def main():
     """
         Initialize planner with:
-        - hospitals: DataFrame with SiteID, Lon, Lat, CostPerBed, MaxBeds
+        - hospitals: DataFrame with SiteID, HospitalAddress, Lon, Lat, MaxBeds
         - districts: DataFrame with AGS_CODE, Demand, EquityIndex, centroid (geometry)
         - travel_time: dict of dicts: travel_time[site][district] in minutes
         - budget_beds: total beds available to allocate
@@ -103,50 +114,31 @@ def main():
         - alpha: weight for cost vs equity penalty in objective
         - max_travel: max travel time threshold (minutes)
     """
-
-    
-    # Randomize MaxBeds for hospitals
-    
-    
-    #IMPORT THE DATA SETS AND REPLACE THE DUMMY BELOW 
-    
-    
-    # Create dummy hospital data
-    hospitals_df = pd.DataFrame({
-        "SiteID": ["H1", "H2"],
-        "Lon": [10.0, 10.5],
-        "Lat": [50.0, 50.5],
-    })
-    
-    
-    hospitals_df_dict = hospitals_df.to_dict('list')
-    
-    np.random.seed(42)
-    maxBeds = np.random.randint(200, 1001, size=len(hospitals_df_dict["SiteID"]))
-    
-    hospitals_df["MaxBeds"] = maxBeds
-    
-    
-    
-    # Create dummy district data with centroids
-    districts_df = pd.DataFrame({
-        "AGS_CODE": ["D1", "D2", "D3"],
-        "Demand": [300, 400, 500],
-        "EquityIndex": [1.0, 0.8, 0.4],
-        "Lon": [10.1, 10.3, 10.6],
-        "Lat": [50.1, 50.2, 50.4]
-    })
-    districts_df["centroid"] = districts_df.apply(lambda row: Point(row["Lon"], row["Lat"]), axis=1)
+    hospitals_df = get_hospital_df()
+    hospitals_df = hospitals_df.set_index("SiteID")
+        
+    index_df = assemble_indexes()
+    weight = {
+        Index.FORECAST_DEMAND: 0.25,
+        Index.ELDERLY_SHARE: 0.25,
+        Index.GISD: 0.25,
+        Index.HOSPITAL_CAPACITY: 0.25,
+        Index.TRAVEL_TIME: 0.25,
+        Index.ACCESSIBILITY: 0.25,
+    }
+    curr_hospital_demand = current_hospital_demand()
+    idx = curr_hospital_demand.index
+    districts_df = pd.concat([
+        curr_hospital_demand.reindex(idx),
+        equity_index(index_df, weight).reindex(idx),
+        centroid().reindex(idx)
+    ], axis=1, keys=["Demand", "EquityIndex", "centroid"])
     districts_gdf = gpd.GeoDataFrame(districts_df, geometry="centroid")
-    
-    # Create dummy travel_time dict: travel_time[hospital][district] in minutes
-    travel_time_dict = {
-        "H1": {"D1": 15, "D2": 25, "D3": 35},
-        "H2": {"D1": 20, "D2": 10, "D3": 30}
-    } 
-    
+
+    travel_time_dict = get_travel_time_matrix()
+
     #travel time planner 
-    
+
     # Run planner
     planner = AgenticPlannerWithPrediction(
         hospitals_df,
@@ -158,16 +150,16 @@ def main():
         max_travel=30,
         predict_new=3
     )
-    
+
     plan = planner.optimize_with_bayesian()
-    
+
     print("Open sites:", plan["open_sites"])
     print("Beds allocation:", plan["beds_alloc"])
     print("Objective value:", plan["objective"])
-    
+
     # planner.plot_predicted_hospitals()
-    
+
     planner.plot_predicted_hospitals()
     
 if __name__ == "__main__":
-    print(assemble_indexes())
+    main()

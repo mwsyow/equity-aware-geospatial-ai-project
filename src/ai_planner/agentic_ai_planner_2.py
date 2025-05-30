@@ -28,8 +28,8 @@ class AgenticPlanner:
         - alpha: weight for cost vs equity penalty in objective
         - max_travel: max travel time threshold (minutes)
         """
-        self.hospitals  = hospitals.set_index("SiteID")
-        self.districts  = districts.set_index("AGS_CODE")
+        self.hospitals  = hospitals
+        self.districts  = districts
         self.tt         = travel_time
         self.budget     = budget_beds
         self.max_sites  = max_open_sites
@@ -212,11 +212,11 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         # Extract coords (lon, lat) of district centroids
         coords = np.vstack(self.districts["centroid"].apply(lambda p: (p.x, p.y)))
 
-        districts_dict = self.districts.to_dict('list')
+        # districts_dict = self.districts.to_dict('list')
         
 
         # Cluster district centroids to find new hospital locations
-        kmeans = KMeans(n_clusters=min(self.predict_new, len(districts_dict["AGS_CODE"])), random_state=42)
+        kmeans = KMeans(n_clusters=min(self.predict_new, len(self.districts)), random_state=42)
         kmeans.fit(coords)
         centers = kmeans.cluster_centers_
 
