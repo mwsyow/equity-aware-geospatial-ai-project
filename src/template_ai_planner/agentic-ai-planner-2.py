@@ -10,6 +10,11 @@ import matplotlib.pyplot as plt
 # This formula is applicable at a district level
 
 #Higher value of EquityIndex should mean worse equity and vice versa
+from shapely.geometry import Point
+from bayes_opt import BayesianOptimization
+
+
+COST_PER_BED = 1500  # Example cost per bed 
 
 class AgenticPlanner:
     def __init__(self, hospitals, districts, travel_time,
@@ -44,7 +49,7 @@ class AgenticPlanner:
         Return combined objective and coverage dict.
         """
         # Cost: total cost for allocated beds
-        cost = sum(self.beds_alloc[s] * self.hospitals.loc[s, "CostPerBed"]
+        cost = sum(self.beds_alloc[s] * COST_PER_BED
                    for s in self.open_sites)
 
         # Coverage per district: sum of reachable beds / demand capped at 1
@@ -127,6 +132,63 @@ class AgenticPlanner:
             "coverage": final_cov,
             "objective": final_score
         }
+    
+    
+    def optimize_with_bayesian(self):
+        """Use Bayesian Optimization to find best bed allocation and open sites."""
+
+        def objective_function(**kwargs):
+
+            self.open_sites = set()
+            self.beds_alloc = {s: 0 for s in self.hospitals.index}
+            total_beds = 0
+
+            sorted_sites = sorted(self.hospitals.index)
+            for s in sorted_sites:
+                key = f"beds_{s}"
+                beds = int(round(kwargs.get(key, 0) / 50)) * 50
+                if beds > 0:
+                    self.open_sites.add(s)
+                    beds = min(beds, self.hospitals.loc[s, "MaxBeds"])
+                    self.beds_alloc[s] = beds
+                    total_beds += beds
+
+            if total_beds > self.budget or len(self.open_sites) > self.max_sites:
+                return -1e9  # Penalty for violating constraints
+
+            score, _ = self.evaluate()
+            return -score  # Because BayesianOptimization maximizes
+        
+        print("Starting Bayesian Optimization...")
+        # Define parameter bounds for each hospital's bed allocation
+
+        pbounds = {}
+        for s in self.hospitals.index:
+            pbounds[f"beds_{s}"] = (0, self.hospitals.loc[s, "MaxBeds"])
+
+        optimizer = BayesianOptimization(
+            f=objective_function,
+            pbounds=pbounds,
+            random_state=42,
+            verbose=2
+        )
+
+        optimizer.maximize(init_points=5, n_iter=15)
+
+        best_params = optimizer.max["params"]
+        for s in self.hospitals.index:
+            val = int(round(best_params.get(f"beds_{s}", 0) / 50)) * 50
+            if val > 0:
+                self.open_sites.add(s)
+                self.beds_alloc[s] = val
+
+        final_score, final_cov = self.evaluate()
+        return {
+            "open_sites": self.open_sites,
+            "beds_alloc": self.beds_alloc,
+            "coverage": final_cov,
+            "objective": final_score
+        }
 
 class AgenticPlannerWithPrediction(AgenticPlanner):
     def __init__(self, hospitals, districts, travel_time,
@@ -151,14 +213,17 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         # Extract coords (lon, lat) of district centroids
         coords = np.vstack(self.districts["centroid"].apply(lambda p: (p.x, p.y)))
 
+        districts_dict = districts_df.to_dict('list')
+        
+
         # Cluster district centroids to find new hospital locations
-        kmeans = KMeans(n_clusters=self.predict_new, random_state=42)
+        kmeans = KMeans(n_clusters=min(self.predict_new, len(districts_dict["AGS_CODE"])), random_state=42)
         kmeans.fit(coords)
         centers = kmeans.cluster_centers_
 
         # Calculate averages from existing hospitals
         max_beds_avg = int(self.hospitals["MaxBeds"].mean())
-        cost_per_bed_avg = self.hospitals["CostPerBed"].mean()
+        cost_per_bed_avg = COST_PER_BED  # Assuming a fixed cost per bed for simplicity
 
         new_hospitals = []
         for i, (lon, lat) in enumerate(centers):
@@ -220,29 +285,78 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         plt.show()
 
 
-# ===========================
-# Example usage (you provide data)
-# ===========================
+    """
+        Initialize planner with:
+        - hospitals: DataFrame with SiteID, Lon, Lat, CostPerBed, MaxBeds
+        - districts: DataFrame with AGS_CODE, Demand, EquityIndex, centroid (geometry)
+        - travel_time: dict of dicts: travel_time[site][district] in minutes
+        - budget_beds: total beds available to allocate
+        - max_open_sites: max hospitals that can be open simultaneously
+        - alpha: weight for cost vs equity penalty in objective
+        - max_travel: max travel time threshold (minutes)
+    """
 
-# hospitals_df: DataFrame with columns [SiteID, Lon, Lat, CostPerBed, MaxBeds]
-# districts_df: GeoDataFrame with columns [AGS_CODE, Demand, EquityIndex, geometry (centroid)]
-# travel_time_dict: dict of dicts travel_time[site][district] = travel time in minutes
 
-# planner = AgenticPlannerWithPrediction(
-#     hospitals_df,
-#     districts_df,
-#     travel_time_dict,
-#     budget_beds=1500,
-#     max_open_sites=4,
-#     alpha=0.7,
-#     max_travel=30,
-#     predict_new=2   # Predict 2 new hospital locations
-# )
+# Randomize MaxBeds for hospitals
 
-# plan = planner.run()
 
-# print("Open sites:", plan["open_sites"])
-# print("Beds allocation:", plan["beds_alloc"])
-# print("Objective value:", plan["objective"])
+#IMPORT THE DATA SETS AND REPLACE THE DUMMY BELOW 
+
+
+# Create dummy hospital data
+hospitals_df = pd.DataFrame({
+    "SiteID": ["H1", "H2"],
+    "Lon": [10.0, 10.5],
+    "Lat": [50.0, 50.5],
+})
+
+
+hospitals_df_dict = hospitals_df.to_dict('list')
+
+np.random.seed(42)
+maxBeds = np.random.randint(200, 1001, size=len(hospitals_df_dict["SiteID"]))
+
+hospitals_df["MaxBeds"] = maxBeds
+
+
+
+# Create dummy district data with centroids
+districts_df = pd.DataFrame({
+    "AGS_CODE": ["D1", "D2", "D3"],
+    "Demand": [300, 400, 500],
+    "EquityIndex": [1.0, 0.8, 0.4],
+    "Lon": [10.1, 10.3, 10.6],
+    "Lat": [50.1, 50.2, 50.4]
+})
+districts_df["centroid"] = districts_df.apply(lambda row: Point(row["Lon"], row["Lat"]), axis=1)
+districts_gdf = gpd.GeoDataFrame(districts_df, geometry="centroid")
+
+# Create dummy travel_time dict: travel_time[hospital][district] in minutes
+travel_time_dict = {
+    "H1": {"D1": 15, "D2": 25, "D3": 35},
+    "H2": {"D1": 20, "D2": 10, "D3": 30}
+} 
+
+#travel time planner 
+
+# Run planner
+planner = AgenticPlannerWithPrediction(
+    hospitals_df,
+    districts_gdf,
+    travel_time_dict,
+    budget_beds=1000,
+    max_open_sites=2,
+    alpha=0.6,
+    max_travel=30,
+    predict_new=3
+)
+
+plan = planner.optimize_with_bayesian()
+
+print("Open sites:", plan["open_sites"])
+print("Beds allocation:", plan["beds_alloc"])
+print("Objective value:", plan["objective"])
 
 # planner.plot_predicted_hospitals()
+
+planner.plot_predicted_hospitals()
