@@ -1,10 +1,3 @@
-# Step 1: Compute Adjusted Beds per District
-
-# AdjBeds₍d₎ = Beds₍d₎ ÷ Population₍d₎
-
-# Step 2: Normalize & Invert to get Hospital Capacity Index
-
-# HospitalCapacityIndex₍d₎ = 1 − (AdjBeds₍d₎ − min(AdjBeds)) ÷ (max(AdjBeds) − min(AdjBeds))
 import os
 import pandas as pd
 
@@ -22,8 +15,19 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 
 def load_hospital_data() -> pd.DataFrame:
     """
-    Loads the hospital dataset from Excel, finds the header row dynamically,
-    filters for a specific Land code, and returns a DataFrame with 'region', 'district', and 'beds'.
+    Loads and processes hospital data from an Excel file.
+
+    The function performs the following operations:
+    1. Dynamically finds the header row in the Excel file
+    2. Filters data for the specified region (Saarland)
+    3. Extracts relevant columns (region, district, beds)
+    4. Cleans the data by removing rows with missing or zero beds
+
+    Returns:
+        pd.DataFrame: A DataFrame containing columns:
+            - region (int): Region/Land code
+            - district (float): District/Kreis code
+            - beds (int): Number of hospital beds
     """
     file_path = os.path.join(DATA_PATH, "Krankenhausverzeichnis_2021.xlsx")
     xl = pd.ExcelFile(file_path, engine="openpyxl")
@@ -48,8 +52,17 @@ def load_hospital_data() -> pd.DataFrame:
 
 def load_population_data() -> pd.DataFrame:
     """
-    Loads population data, finds the header row dynamically,
-    filters for a specific Land code, and returns a DataFrame with 'district' and 'population'.
+    Loads and processes population data from an Excel file.
+
+    The function performs the following operations:
+    1. Dynamically finds the header row in the Excel file
+    2. Filters data for the specified region (Saarland)
+    3. Extracts relevant columns (district, population)
+
+    Returns:
+        pd.DataFrame: A DataFrame containing columns:
+            - district (float): District/Kreis code
+            - population (int): Population count for the district
     """
     file_path = file_path = os.path.join(DATA_PATH, "District-Population.xlsx")
     xl = pd.ExcelFile(file_path, engine="openpyxl")
@@ -71,6 +84,24 @@ def load_population_data() -> pd.DataFrame:
     return df
 
 def calculate_hospital_capacity_index() -> dict:
+    """
+    Calculates the Hospital Capacity Index for each district in Saarland.
+
+    The index is calculated using the following steps:
+    1. Aggregates total hospital beds per district
+    2. Combines bed data with population data
+    3. Calculates adjusted beds per capita
+    4. Normalizes and inverts the values to create the final index
+    5. Maps district codes to AGS (Amtlicher Gemeindeschlüssel) codes
+
+    The Hospital Capacity Index ranges from 0 to 1, where:
+    - Higher values indicate lower hospital capacity relative to population
+    - Lower values indicate higher hospital capacity relative to population
+
+    Returns:
+        dict: A dictionary mapping AGS codes to Hospital Capacity Index values,
+              with values rounded to 4 decimal places
+    """
     # Load cleaned datasets
     hospital_df = load_hospital_data()
     population_df = load_population_data()
@@ -100,7 +131,3 @@ def calculate_hospital_capacity_index() -> dict:
     }
 
     return mapped_result
-
-if __name__ == "__main__":
-    result = calculate_hospital_capacity_index()
-    print(result)
