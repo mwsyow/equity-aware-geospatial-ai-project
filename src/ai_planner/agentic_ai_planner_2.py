@@ -13,15 +13,15 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point
 from bayes_opt import BayesianOptimization
 
-COST_PER_BED = 1500  # Example cost per bed 
+COST_PER_BED = 1500  # Average cost per bed in EUR
 
 class AgenticPlanner:
     def __init__(self, hospitals, districts, travel_time,
                  budget_beds, max_open_sites, alpha=0.7, max_travel=30):
         """
         Initialize planner with:
-        - hospitals: DataFrame with SiteID, Lon, Lat, CostPerBed, MaxBeds
-        - districts: DataFrame with AGS_CODE, Demand, EquityIndex, centroid (geometry)
+        - hospitals: DataFrame with Lon, Lat, CostPerBed, MaxBeds
+        - districts: DataFrame with Demand, EquityIndex, centroid (geometry)
         - travel_time: dict of dicts: travel_time[site][district] in minutes
         - budget_beds: total beds available to allocate
         - max_open_sites: max hospitals that can be open simultaneously
@@ -64,74 +64,6 @@ class AgenticPlanner:
                       for d in cov)
 
         return self.alpha * cost + (1 - self.alpha) * penalty, cov
-
-    def propose_actions(self):
-        """
-        Generate all possible next actions:
-        - Open new site if under max_sites
-        - Add beds in increments (50,100,200) to open sites within budget and max
-        """
-        if len(self.open_sites) < self.max_sites:
-            for s in self.hospitals.index:
-                if s not in self.open_sites:
-                    yield ("open", s, 0)
-
-        for s in self.open_sites:
-            max_more = min(
-                self.hospitals.loc[s,"MaxBeds"] - self.beds_alloc[s],
-                self.budget - sum(self.beds_alloc.values())
-            )
-            for delta in [50, 100, 200]:
-                if delta <= max_more:
-                    yield ("add_beds", s, delta)
-
-    def run(self):
-        """
-        Greedy optimization loop:
-        - Evaluate all possible single-step actions
-        - Pick the one improving objective most
-        - Stop if no improvement
-        """
-        best_score, _ = self.evaluate()
-        improved = True
-
-        while improved:
-            improved = False
-            candidates = []
-            for act, site, delta in self.propose_actions():
-                if act == "open":
-                    self.open_sites.add(site)
-                else:
-                    self.beds_alloc[site] += delta
-
-                score, _ = self.evaluate()
-                candidates.append((score, act, site, delta))
-
-                # Undo action
-                if act == "open":
-                    self.open_sites.remove(site)
-                else:
-                    self.beds_alloc[site] -= delta
-
-            candidates.sort(key=lambda x: x[0])
-            best_cand = candidates[0]
-            if best_cand[0] < best_score:
-                best_score, act, site, delta = best_cand
-                print(f"Applying {act} on {site} (+{delta}) → score {best_score:.3f}")
-                if act == "open":
-                    self.open_sites.add(site)
-                else:
-                    self.beds_alloc[site] += delta
-                improved = True
-
-        final_score, final_cov = self.evaluate()
-        return {
-            "open_sites": self.open_sites,
-            "beds_alloc": self.beds_alloc,
-            "coverage": final_cov,
-            "objective": final_score
-        }
-    
     
     def optimize_with_bayesian(self):
         """Use Bayesian Optimization to find best bed allocation and open sites."""
@@ -209,15 +141,23 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         Assign average bed capacity and cost.
         Estimate travel time by Euclidean distance.
         """
-        # Extract coords (lon, lat) of district centroids
-        coords = np.vstack(self.districts["centroid"].apply(lambda p: (p.x, p.y)))
+        # Extract district coordinates
+        coords_array = self.districts["centroid"].values
 
-        # districts_dict = self.districts.to_dict('list')
-        
+        # Handle case where fewer districts exist than number of hospitals to predict
+        n_samples = max(self.predict_new, len(coords_array)) * 3  # Oversample to give KMeans variety
 
-        # Cluster district centroids to find new hospital locations
-        kmeans = KMeans(n_clusters=min(self.predict_new, len(self.districts)), random_state=42)
-        kmeans.fit(coords)
+        # Population-based weights for sampling
+        weights = self.districts["Demand"] / self.districts["Demand"].sum()
+
+        # Sample coordinates with population weighting (with replacement)
+        sampled_coords = np.array([
+            (coords_array[i].x, coords_array[i].y) for i in np.random.choice(len(coords_array), size=n_samples, p=weights)
+        ])
+
+        # Apply KMeans to sampled coordinates
+        kmeans = KMeans(n_clusters=self.predict_new, random_state=42)
+        kmeans.fit(sampled_coords)
         centers = kmeans.cluster_centers_
 
         # Calculate averages from existing hospitals

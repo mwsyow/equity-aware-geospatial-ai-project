@@ -148,7 +148,7 @@ def main():
         max_open_sites=2,
         alpha=0.6,
         max_travel=30,
-        predict_new=3
+        predict_new=4
     )
 
     plan = planner.optimize_with_bayesian()
