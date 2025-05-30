@@ -326,5 +326,5 @@ def forecast_demand_per_district_in_saarland() -> dict:
 
     # # Step 4: Normalize to 0–1
     normalized_index = confidence_weighted_index.map(lambda x: 1 - x/confidence_weighted_index.sum())
-    result = normalized_index.to_dict()
+    result = {str(k): v for k, v in normalized_index.to_dict().items()}
     return result
