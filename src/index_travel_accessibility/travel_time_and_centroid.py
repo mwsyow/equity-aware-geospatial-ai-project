@@ -1,5 +1,6 @@
 import os
 import time
+import folium
 import requests
 import pandas as pd
 import geopandas as gpd
@@ -107,6 +108,131 @@ def get_travel_time_matrix():
             time.sleep(0.1)  # polite delay to avoid API overload
 
     return travel_time_dict
+
+
+# MUST HAVE
+
+
+
+
+# -------------------------------------REMOVE BELOW CODE-----------------------------------------------------------------------------------
+# DUMMY DATA
+# import pandas as pd
+
+# # Create the DataFrame from a dictionary
+# data = {
+#     "SiteID": [f"pred_{i}" for i in range(10)],
+#     "HospitalAddress": [None] * 10,
+#     "longitude": [7.117023, 6.957087, 6.775425, 7.242228, 7.100471,
+#             6.680205, 6.957087, 6.957087, 6.957087, 6.957087],
+#     "latitude": [49.375798, 49.251391, 49.355464, 49.248755, 49.519607,
+#             49.495750, 49.251391, 49.251391, 49.251391, 49.251391],
+#     "MaxBeds": [277.0] * 10,
+#     "CostPerBed": [1500.0] * 10
+# }
+
+# df_predicted = pd.DataFrame(data)
+# df_predicted.set_index("SiteID", inplace=True)
+
+# # Save to Excel
+# df_predicted.to_excel(PREDICTED_HOSPITALS_PATH)
+
+
+
+# -----------------------------------REMOVE UNTIL HERE------------------------------------------------------------------
+
+def map_predicted_and_existing_hospitals(path: str, df_predicted: pd.DataFrame):
+    """
+    Saves map showing all existing hospitals and predicted hospitals by Agentic AI in Saarland.
+    """
+
+    # Load existing hospitals
+    df_existing = pd.read_excel(HOSPITAL_WITH_COORDS_DATA_PATH)
+    
+    # Saarland center
+    saarland_center = [49.3964, 7.0220]
+
+    # Create map
+    m = folium.Map(location=saarland_center, zoom_start=10, tiles="OpenStreetMap")
+
+    # Add existing hospitals (red markers)
+    for _, row in df_existing.iterrows():
+        if pd.notnull(row["latitude"]) and pd.notnull(row["longitude"]):
+            popup = folium.Popup(f"Existing Hospital: {row['Adresse_Name']}", max_width=250)
+            folium.Marker(
+                location=[row["latitude"], row["longitude"]],
+                popup=popup,
+                icon=folium.Icon(color="red", icon="plus-sign")
+            ).add_to(m)
+
+    # Add predicted hospitals (blue markers)
+    for _, row in df_predicted.iterrows():
+        if pd.notnull(row["Lat"]) and pd.notnull(row["Lon"]):
+            popup = folium.Popup(f"Predicted Hospital", max_width=250)
+            folium.Marker(
+                location=[row["Lat"], row["Lon"]],
+                popup=popup,
+                icon=folium.Icon(color="blue", icon="plus-sign")
+            ).add_to(m)
+
+    # Load NUTS shapefile
+    nuts_gdf = gpd.read_file(NUTS_DATA_PATH)
+
+    # Filter Saarland districts (NUTS-3 = DECxx)
+    districts = nuts_gdf[nuts_gdf["NUTS_ID"].str.startswith("DEC")]
+    saarland_state = nuts_gdf[nuts_gdf["NUTS_ID"] == "DEC0"]
+
+    # Ensure CRS is WGS84
+    districts = districts.to_crs(epsg=4326)
+    saarland_state = saarland_state.to_crs(epsg=4326)
+
+    # Add Saarland state border
+    folium.GeoJson(
+        saarland_state,
+        name="Saarland State Border",
+        style_function=lambda x: {
+            'fillColor': 'none',
+            'color': 'red',
+            'weight': 3,
+            'dashArray': '5, 5'
+        }
+    ).add_to(m)
+
+    # Add district borders
+    folium.GeoJson(
+        districts,
+        name="Saarland Districts",
+        style_function=lambda x: {
+            'fillColor': 'none',
+            'color': 'black',
+            'weight': 3,
+            'opacity': 0.7
+        },
+        tooltip=folium.GeoJsonTooltip(fields=["NUTS_NAME"])
+    ).add_to(m)
+
+    # Add custom legend using HTML
+    legend_html = """
+    <div style="position: fixed; 
+                bottom: 40px; left: 40px; width: 200px; height: 100px; 
+                background-color: white; border:2px solid grey; z-index:9999; 
+                font-size:14px; padding: 10px;">
+        <b>Legend</b><br>
+        <i class="fa fa-map-marker fa-2x" style="color:red"></i> Existing Hospital<br>
+        <i class="fa fa-map-marker fa-2x" style="color:blue"></i> Predicted Hospital
+    </div>
+    """
+    m.get_root().html.add_child(folium.Element(legend_html))
+
+    # Add layer control
+    folium.LayerControl().add_to(m)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # Save map
+    m.save(path)
+
+    print("✅ Map saved with existing and predicted hospitals!")
+    
+    
 
 #! RESULTS
 

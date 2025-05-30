@@ -134,6 +134,14 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         self.predict_new = predict_new
         if predict_new > 0:
             self.predict_new_hospitals()
+        
+    @property    
+    def predicted_hospitals(self) -> pd.DataFrame:
+        """
+        Returns DataFrame of predicted hospitals.
+        Includes SiteID, Lon, Lat, CostPerBed, MaxBeds.
+        """
+        return self.hospitals.loc[self.hospitals.index.str.startswith("pred_")]
 
     def predict_new_hospitals(self):
         """

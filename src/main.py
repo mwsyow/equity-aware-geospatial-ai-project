@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import geopandas as gpd
@@ -17,7 +18,8 @@ from index_gisd.gisd import run as run_gisd
 from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
 from index_travel_accessibility.TAI import RUN as run_travel_time_index
 from index_travel_accessibility.travel_time_and_centroid import (
-    get_centroids, get_hospital_df, get_travel_time_matrix
+    get_centroids, get_hospital_df, get_travel_time_matrix,
+    map_predicted_and_existing_hospitals
 )
 class Index(StrEnum):
     FORECAST_DEMAND = "forecast_demand_index"
@@ -32,7 +34,7 @@ INDEX_FUNC_MAP = {
     Index.ELDERLY_SHARE: run_elderly_share,
     Index.GISD: run_gisd,
     Index.HOSPITAL_CAPACITY: run_hospital_capacity_index,
-    Index.TRAVEL_TIME: run_travel_time_index
+    Index.TRAVEL_TIME: run_travel_time_index,
 }
 
 def assemble_indexes() -> pd.DataFrame:
@@ -157,9 +159,12 @@ def main():
     print("Beds allocation:", plan["beds_alloc"])
     print("Objective value:", plan["objective"])
 
+    save_path = os.path.join(os.path.dirname(__file__), "results", "saarland_map_with_predicted_and_exisiting_hospitals.html")
     # planner.plot_predicted_hospitals()
+    map_predicted_and_existing_hospitals(
+        save_path,
+        planner.predicted_hospitals
+    )
 
-    planner.plot_predicted_hospitals()
-    
 if __name__ == "__main__":
     main()
