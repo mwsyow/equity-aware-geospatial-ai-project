@@ -1,5 +1,12 @@
 # src/index_elderly/elderly.py
 
+"""
+Calculate the share of elderly population (age 65+) for districts in Saarland.
+
+This script processes demographic data to compute the percentage of elderly residents
+in each district (AGS) of Saarland, using population data for age groups 65-75 and 75+.
+"""
+
 import os
 import pandas as pd
 import csv
@@ -15,13 +22,18 @@ DEF_DATE    = "2021-12-31"
 
 def load_raw():
     """
-    Skip the first 6 descriptive lines, then read only these columns:
-      0 = reference date
-      1 = region code (AGS)
-     33 = '65 to under 75 years' value
-     35 = '75 years and over' value
-     37 = 'Total' value
-    (The odd‐numbered columns in between are the little 'e' footnote columns.)
+    Load raw demographic data from CSV file.
+
+    Returns:
+        pandas.DataFrame: DataFrame containing columns:
+            - ref_date: Reference date of the data
+            - AGS: District identifier code
+            - 65_to_75: Population count for age group 65-75
+            - 75_plus: Population count for age group 75+
+            - pop_total: Total population
+    
+    Raises:
+        ValueError: If the specified reference date is not found in the CSV
     """
 
     # first pass: find which line data actually begins on
@@ -48,6 +60,16 @@ def load_raw():
     return df
 
 def trim_by_year(df, date):
+    """
+    Filter DataFrame to keep only rows for a specific reference date.
+
+    Args:
+        df (pandas.DataFrame): Input DataFrame with demographic data
+        date (str): Reference date to filter by
+
+    Returns:
+        pandas.DataFrame: Filtered DataFrame containing only rows for specified date
+    """
 
     # forward-fill the header dates
     df["ref_date"] = df["ref_date"].ffill()
@@ -60,6 +82,16 @@ def trim_by_year(df, date):
     return df_by_date
 
 def trim_by_ags_codes(df, ags_codes):
+    """
+    Filter DataFrame to keep only rows for specified district codes (AGS).
+
+    Args:
+        df (pandas.DataFrame): Input DataFrame with demographic data
+        ags_codes (set): Set of district codes to include
+
+    Returns:
+        pandas.DataFrame: Filtered DataFrame containing only rows for specified districts
+    """
     mask = df["AGS"].isin(ags_codes)
 
     # pull out only those rows
@@ -67,6 +99,17 @@ def trim_by_ags_codes(df, ags_codes):
     return df_by_ags_codes
 
 def compute_share(df):
+    """
+    Calculate the share of elderly population (65+) for each district.
+
+    Args:
+        df (pandas.DataFrame): Input DataFrame with demographic data
+
+    Returns:
+        pandas.DataFrame: DataFrame with additional 'elderly_share' column containing
+            the proportion of population aged 65 and over
+    """
+
     for col in ["65_to_75", "75_plus", "pop_total"]:
         df[col] = pd.to_numeric(df[col], errors="raise").astype(int)
 
@@ -74,10 +117,30 @@ def compute_share(df):
     return df
 
 def get_dict(df):
+    """
+    Convert DataFrame results to a dictionary mapping district codes to elderly shares.
+
+    Args:
+        df (pandas.DataFrame): Input DataFrame with AGS codes and elderly_share column
+
+    Returns:
+        dict: Dictionary with AGS codes as keys and elderly share values as values
+    """
+
     return dict(zip(df["AGS"], df["elderly_share"]))
 
 
 def run():
+    """
+    Execute the complete workflow to calculate elderly population shares.
+
+    Creates output directory if it doesn't exist, loads raw data,
+    processes it for Saarland districts, and computes elderly shares.
+
+    Returns:
+        dict: Dictionary mapping Saarland district codes to their elderly population shares
+    """
+
     os.makedirs(OUT_DIR, exist_ok=True)
     df = load_raw()
     def_by_date = trim_by_year(df, DEF_DATE)
@@ -85,6 +148,3 @@ def run():
     final_def = compute_share(saarland_def)
 
     return get_dict(final_def)
-
-if __name__ == "__main__":
-    run()
