@@ -212,7 +212,7 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         # Extract coords (lon, lat) of district centroids
         coords = np.vstack(self.districts["centroid"].apply(lambda p: (p.x, p.y)))
 
-        districts_dict = districts_df.to_dict('list')
+        districts_dict = self.districts.to_dict('list')
         
 
         # Cluster district centroids to find new hospital locations
@@ -282,80 +282,3 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         plt.xlabel("Longitude")
         plt.ylabel("Latitude")
         plt.show()
-
-
-    """
-        Initialize planner with:
-        - hospitals: DataFrame with SiteID, Lon, Lat, CostPerBed, MaxBeds
-        - districts: DataFrame with AGS_CODE, Demand, EquityIndex, centroid (geometry)
-        - travel_time: dict of dicts: travel_time[site][district] in minutes
-        - budget_beds: total beds available to allocate
-        - max_open_sites: max hospitals that can be open simultaneously
-        - alpha: weight for cost vs equity penalty in objective
-        - max_travel: max travel time threshold (minutes)
-    """
-
-
-# Randomize MaxBeds for hospitals
-
-
-#IMPORT THE DATA SETS AND REPLACE THE DUMMY BELOW 
-
-
-# Create dummy hospital data
-hospitals_df = pd.DataFrame({
-    "SiteID": ["H1", "H2"],
-    "Lon": [10.0, 10.5],
-    "Lat": [50.0, 50.5],
-})
-
-
-hospitals_df_dict = hospitals_df.to_dict('list')
-
-np.random.seed(42)
-maxBeds = np.random.randint(200, 1001, size=len(hospitals_df_dict["SiteID"]))
-
-hospitals_df["MaxBeds"] = maxBeds
-
-
-
-# Create dummy district data with centroids
-districts_df = pd.DataFrame({
-    "AGS_CODE": ["D1", "D2", "D3"],
-    "Demand": [300, 400, 500],
-    "EquityIndex": [1.0, 0.8, 0.4],
-    "Lon": [10.1, 10.3, 10.6],
-    "Lat": [50.1, 50.2, 50.4]
-})
-districts_df["centroid"] = districts_df.apply(lambda row: Point(row["Lon"], row["Lat"]), axis=1)
-districts_gdf = gpd.GeoDataFrame(districts_df, geometry="centroid")
-
-# Create dummy travel_time dict: travel_time[hospital][district] in minutes
-travel_time_dict = {
-    "H1": {"D1": 15, "D2": 25, "D3": 35},
-    "H2": {"D1": 20, "D2": 10, "D3": 30}
-} 
-
-#travel time planner 
-
-# Run planner
-planner = AgenticPlannerWithPrediction(
-    hospitals_df,
-    districts_gdf,
-    travel_time_dict,
-    budget_beds=1000,
-    max_open_sites=2,
-    alpha=0.6,
-    max_travel=30,
-    predict_new=3
-)
-
-plan = planner.optimize_with_bayesian()
-
-print("Open sites:", plan["open_sites"])
-print("Beds allocation:", plan["beds_alloc"])
-print("Objective value:", plan["objective"])
-
-# planner.plot_predicted_hospitals()
-
-planner.plot_predicted_hospitals()
