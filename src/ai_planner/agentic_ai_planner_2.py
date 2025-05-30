@@ -16,17 +16,37 @@ from bayes_opt import BayesianOptimization
 COST_PER_BED = 1500  # Average cost per bed in EUR
 
 class AgenticPlanner:
-    def __init__(self, hospitals, districts, travel_time,
-                 budget_beds, max_open_sites, alpha=0.7, max_travel=30):
+    """
+    A base planner class that optimizes hospital locations and bed allocations.
+
+    This class implements a hospital location optimization system that considers both
+    operational costs and healthcare equity measures. It uses a weighted objective
+    function to balance between minimizing costs and maximizing healthcare accessibility.
+
+    Attributes:
+        hospitals (pd.DataFrame): Hospital data with Lon, Lat, CostPerBed, MaxBeds
+        districts (pd.DataFrame): District data with Demand, EquityIndex, centroid
+        tt (dict): Travel time matrix between sites and districts
+        budget (int): Total available beds to allocate
+        max_sites (int): Maximum number of hospitals that can be open
+        alpha (float): Weight between cost (alpha) and equity (1-alpha)
+        max_travel (int): Maximum acceptable travel time in minutes
+        open_sites (set): Currently open hospital sites
+        beds_alloc (dict): Current bed allocation per site
+    """
+
+    def __init__(self, hospitals, districts, travel_time, budget_beds, max_open_sites, alpha=0.7, max_travel=30):
         """
-        Initialize planner with:
-        - hospitals: DataFrame with Lon, Lat, CostPerBed, MaxBeds
-        - districts: DataFrame with Demand, EquityIndex, centroid (geometry)
-        - travel_time: dict of dicts: travel_time[site][district] in minutes
-        - budget_beds: total beds available to allocate
-        - max_open_sites: max hospitals that can be open simultaneously
-        - alpha: weight for cost vs equity penalty in objective
-        - max_travel: max travel time threshold (minutes)
+        Initialize the hospital planner with optimization parameters.
+
+        Args:
+            hospitals (pd.DataFrame): Hospital data with required columns
+            districts (pd.DataFrame): District data with required columns
+            travel_time (dict): Travel time matrix between sites and districts
+            budget_beds (int): Total available beds to allocate
+            max_open_sites (int): Maximum number of hospitals allowed
+            alpha (float, optional): Cost vs equity weight. Defaults to 0.7
+            max_travel (int, optional): Max travel time in minutes. Defaults to 30
         """
         self.hospitals  = hospitals
         self.districts  = districts
@@ -42,10 +62,16 @@ class AgenticPlanner:
 
     def evaluate(self):
         """
-        Evaluate current plan:
-        - cost_term: sum over open sites of beds_alloc * cost_per_bed
-        - penalty_term: weighted equity penalty for districts not covered
-        Return combined objective and coverage dict.
+        Evaluate the current hospital plan based on cost and equity metrics.
+
+        Calculates two main components:
+        1. Cost term: Sum of (beds × cost per bed) for all open sites
+        2. Equity penalty: Weighted sum of unmet demand adjusted by equity indices
+
+        Returns:
+            tuple: (objective_value, coverage_dict) where:
+                - objective_value (float): Combined cost and equity score
+                - coverage_dict (dict): Per-district coverage ratios
         """
         # Cost: total cost for allocated beds
         cost = sum(self.beds_alloc[s] * COST_PER_BED
@@ -66,7 +92,26 @@ class AgenticPlanner:
         return self.alpha * cost + (1 - self.alpha) * penalty, cov
     
     def optimize_with_bayesian(self):
-        """Use Bayesian Optimization to find best bed allocation and open sites."""
+        """
+        Use Bayesian Optimization to find best bed allocation and open sites.
+
+        Performs Bayesian optimization to find the optimal:
+        - Set of open hospital sites
+        - Bed allocation for each site
+
+        The optimization considers:
+        - Budget constraints
+        - Maximum number of open sites
+        - Travel time limits
+        - Cost vs equity trade-off (alpha parameter)
+
+        Returns:
+            dict: Optimization results containing:
+                - open_sites: Set of selected hospital locations
+                - beds_alloc: Bed allocation per hospital
+                - coverage: District-level coverage metrics
+                - objective: Final objective function value
+        """
 
         def objective_function(**kwargs):
 
@@ -122,12 +167,30 @@ class AgenticPlanner:
         }
 
 class AgenticPlannerWithPrediction(AgenticPlanner):
-    def __init__(self, hospitals, districts, travel_time,
-                 budget_beds, max_open_sites, alpha=0.7, max_travel=30,
-                 predict_new=0):
+    """
+    Extended planner that can predict new optimal hospital locations.
+
+    This class adds the capability to predict new hospital locations using
+    KMeans clustering of district centroids, weighted by population demand.
+
+    Attributes:
+        predict_new (int): Number of new hospital locations to predict
+    """
+
+    def __init__(self, hospitals, districts, travel_time, budget_beds, max_open_sites, 
+                 alpha=0.7, max_travel=30, predict_new=0):
         """
-        Extends AgenticPlanner:
-        - predict_new: number of new hospital locations to predict
+        Initialize the prediction-capable planner.
+
+        Args:
+            hospitals (pd.DataFrame): Existing hospital data
+            districts (pd.DataFrame): District data
+            travel_time (dict): Travel time matrix
+            budget_beds (int): Total bed budget
+            max_open_sites (int): Maximum hospitals allowed
+            alpha (float, optional): Cost vs equity weight. Defaults to 0.7
+            max_travel (int, optional): Max travel time. Defaults to 30
+            predict_new (int, optional): Number of new hospitals to predict. Defaults to 0
         """
         super().__init__(hospitals, districts, travel_time,
                          budget_beds, max_open_sites, alpha, max_travel)
@@ -135,19 +198,27 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
         if predict_new > 0:
             self.predict_new_hospitals()
         
-    @property    
+    @property
     def predicted_hospitals(self) -> pd.DataFrame:
         """
-        Returns DataFrame of predicted hospitals.
-        Includes SiteID, Lon, Lat, CostPerBed, MaxBeds.
+        Get the subset of predicted hospital locations.
+
+        Returns:
+            pd.DataFrame: DataFrame containing only the predicted hospitals,
+                         with columns: SiteID, Lon, Lat, CostPerBed, MaxBeds
         """
         return self.hospitals.loc[self.hospitals.index.str.startswith("pred_")]
 
     def predict_new_hospitals(self):
         """
-        Predict new hospital locations by clustering district centroids.
-        Assign average bed capacity and cost.
-        Estimate travel time by Euclidean distance.
+        Predict new optimal hospital locations.
+
+        Process:
+        1. Samples district centroids weighted by population demand
+        2. Applies KMeans clustering to find optimal new locations
+        3. Assigns average bed capacity and costs from existing hospitals
+        4. Estimates travel times using Euclidean distance scaling
+        5. Updates the hospitals DataFrame and travel time matrix
         """
         # Extract district coordinates
         coords_array = self.districts["centroid"].values
@@ -205,7 +276,13 @@ class AgenticPlannerWithPrediction(AgenticPlanner):
 
     def plot_predicted_hospitals(self):
         """
-        Plot districts demand heatmap + existing and predicted hospitals on a map.
+        Visualize the hospital locations and district demand.
+
+        Creates a map showing:
+        - District boundaries colored by demand (heatmap)
+        - Existing hospitals as blue circles
+        - Predicted hospitals as green triangles
+        - Legend and axis labels
         """
         fig, ax = plt.subplots(figsize=(10, 8))
 
