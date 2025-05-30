@@ -1,0 +1,6 @@
+pandas==2.2.3
+numpy==2.2.6
+statsmodels==0.14.4
+
+#jupyter notebook
+matplotlib==3.10.3
