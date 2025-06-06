@@ -1,0 +1,37 @@
+name: data_science
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+
+  # Jupyter notebook interface
+  - notebook
+
+  # Geospatial & routing libraries
+  - geopandas
+  - osmnx
+  - folium
+  - shapely
+  - geopy
+  - rtree
+
+  # Core data science libraries
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - statsmodels
+
+  # General utilities
+  - requests
+  - openpyxl
+  - networkx
+
+  # Bayesian optimization
+  - bayesian-optimization
+
+  # If any of the above are missing or you need a more recent version not on conda-forge,
+  # pip is still available to install what conda-forge cannot provide.
+  - pip:
+    # P-Median optimization
+    - pulp
