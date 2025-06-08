@@ -217,9 +217,13 @@ class Planner:
         for (p1, p2), is_neighbor in is_candidate_neighbors.items():
             if p1 != p2 and is_neighbor == 1:
                 self.model += self.x[p1] + self.x[p2] <= 1, f"No_candidate_neighbors_{p1}_{p2}"
-                
-    def predict_k_new_hospitals(self, k: int) -> pulp.LpProblem:
+    
+    def set_num_predictions(self, k: int) -> pulp.LpProblem:
+        if "Open_k_Facilities" in self.model.constraints:
+            self.model.constraints.pop("Open_k_Facilities")
         self.model += pulp.lpSum(self.x[p] for p in self.P) == k, "Open_k_Facilities"
+        
+    def predict(self) -> pulp.LpProblem:
         self.model.solve(pulp.PULP_CBC_CMD(msg=False))
         selected = [p for p in self.P if self.x[p].value() > 0.5]
         assigns = [(d, p) for d in self.D for p in self.P if self.y[d][p].value() > 0.5]
