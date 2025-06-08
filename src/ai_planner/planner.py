@@ -10,7 +10,7 @@ CRS_NUM = 4326
 CRS = f"EPSG:{CRS_NUM}"
 DEFAULT_GRAPH_LOCATION = "Saarland, Germany"
 
-class Planner:
+class HospitalPlanner:
     def __init__(self, districts_gdf: gpd.GeoDataFrame):
         self.districts_gdf = districts_gdf.to_crs(epsg=CRS_NUM)
         
@@ -63,7 +63,7 @@ class Planner:
 
         candidates = []
         for _, row in self.districts_gdf.iterrows():
-            candidates += Planner.generate_points(
+            candidates += HospitalPlanner.generate_points(
                 row['centroid'], 
                 radius_km=radius_km, 
                 n=n_samples_per_centroid, 
@@ -122,7 +122,7 @@ class Planner:
         P = list(self.candidates_gdf.index)  # candidate locations
 
         # Travel time matrix (already computed)
-        c = Planner.build_ttm(self.G, self.districts_gdf, self.candidates_gdf, 'travel_time') # (district, candidate) -> travel time
+        c = HospitalPlanner.build_ttm(self.G, self.districts_gdf, self.candidates_gdf, 'travel_time') # (district, candidate) -> travel time
         c = {k: v / 60 for k, v in c.items()} # convert to minutes
         # Demand, equity, and supply data
         demand = dict(zip(self.districts_gdf.index, self.districts_gdf['demand']))
@@ -170,7 +170,12 @@ class Planner:
         self.x = x
         self.y = y
     
-    def add_existing_hospitals_constraints(self, gdf: gpd.GeoDataFrame, supply_weight: float = 0.065, distance_threshold: int = 7_000) -> pulp.LpProblem:
+    def add_existing_hospitals_constraints(self, 
+        gdf: gpd.GeoDataFrame, 
+        supply_weight: float = 0.065, 
+        distance_threshold: int = 7_000,
+        num_neighbors: int = 0
+        ) -> pulp.LpProblem:
         candidates_gdf = self.candidates_gdf.copy()
         hospital_gdf = gdf.copy()
         hospital_gdf['node'] = ox.nearest_nodes(
@@ -178,7 +183,7 @@ class Planner:
             hospital_gdf.geometry.x,
             hospital_gdf.geometry.y
         )
-        distance_existing_hospitals = Planner.build_ttm(
+        distance_existing_hospitals = HospitalPlanner.build_ttm(
             self.G,
             candidates_gdf,
             hospital_gdf,
@@ -199,14 +204,17 @@ class Planner:
         supply_norm = self.normalize_metric(supply_raw)
         
         self.model += (
-            supply_weight * pulp.lpSum(
+            (1 - supply_weight * pulp.lpSum(
                 supply_norm[p] * self.x[p] 
                 for p in self.P 
-            )
+            ))
         ), "Total_Supply"
+        for p in self.P:
+            if len(is_existing_hospitals_neighbors[p]) >= num_neighbors:
+                self.model += self.x[p] == 0, f"Close_if_has_more_than_{num_neighbors}_existing_hospitals_neighbors_{p}"
     
     def add_neighbor_constraints(self, distance_threshold: int = 7_000) -> pulp.LpProblem:
-        is_candidate_neighbors = Planner.build_ttm(
+        is_candidate_neighbors = HospitalPlanner.build_ttm(
             self.G,
             self.candidates_gdf,
             self.candidates_gdf,
@@ -223,7 +231,7 @@ class Planner:
             self.model.constraints.pop("Open_k_Facilities")
         self.model += pulp.lpSum(self.x[p] for p in self.P) == k, "Open_k_Facilities"
         
-    def predict(self) -> pulp.LpProblem:
+    def predict(self) -> tuple[list[int], list[tuple[int, int]]]:
         self.model.solve(pulp.PULP_CBC_CMD(msg=False))
         selected = [p for p in self.P if self.x[p].value() > 0.5]
         assigns = [(d, p) for d in self.D for p in self.P if self.y[d][p].value() > 0.5]
