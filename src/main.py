@@ -135,6 +135,52 @@ def current_hospital_demand() -> pd.Series:
     curr_demand.index = [str(i) for i in curr_demand.index]
     return curr_demand
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+import numpy as np
+import pandas as pd
+
+def compute_pca_weights(index_df: pd.DataFrame) -> dict[Index, float]:
+    """
+    Derive weights from PCA loadings on the first principal component.
+    Returns normalized weights for each index (excluding the composite ACCESSIBILITY index),
+    and computes the ACCESSIBILITY index weight as the sum of its components.
+    
+    ACCESSIBILITY = ELDERLY_SHARE + HOSPITAL_CAPACITY (weighted sum)
+    """
+    # Ensure columns match Enum values
+    df = index_df.copy()
+    
+    # Drop ACCESSIBILITY because it's composite
+    df = df.drop(columns=[Index.ACCESSIBILITY.value], errors='ignore')
+
+    # Standardize data
+    scaler = StandardScaler()
+    X = scaler.fit_transform(df.values)
+
+    # Perform PCA
+    pca = PCA(n_components=1)
+    pca.fit(X)
+
+    # Get absolute PCA loadings for interpretability
+    loadings = np.abs(pca.components_[0])
+
+    # Map column names to loadings
+    weights_raw = dict(zip(df.columns, loadings))
+
+    # Normalize weights so they sum to 1
+    total = sum(weights_raw.values())
+    normalized_weights = {Index(col): val / total for col, val in weights_raw.items()}
+
+    # Compute ACCESSIBILITY as the sum of its components' weights
+    accessibility_weight = (
+        normalized_weights.get(Index.ELDERLY_SHARE, 0.0) +
+        normalized_weights.get(Index.HOSPITAL_CAPACITY, 0.0)
+    )
+    normalized_weights[Index.ACCESSIBILITY] = accessibility_weight
+
+    return normalized_weights
+
 def main():
     """
     Main entry point for the equity-aware hospital planning system.
@@ -160,14 +206,16 @@ def main():
     hospitals_df = hospitals_df.set_index("SiteID")
         
     index_df = assemble_indexes()
-    weight = {
-        Index.FORECAST_DEMAND: 0.25,
-        Index.ELDERLY_SHARE: 0.25,
-        Index.GISD: 0.25,
-        Index.HOSPITAL_CAPACITY: 0.25,
-        Index.TRAVEL_TIME: 0.25,
-        Index.ACCESSIBILITY: 0.25,
-    }
+    # Compute PCA weights for the indexes
+    weight = compute_pca_weights(index_df)
+    # weight = {
+    #     Index.FORECAST_DEMAND: 0.25,
+    #     Index.ELDERLY_SHARE: 0.25,
+    #     Index.GISD: 0.25,
+    #     Index.HOSPITAL_CAPACITY: 0.25,
+    #     Index.TRAVEL_TIME: 0.25,
+    #     Index.ACCESSIBILITY: 0.25,
+    # }
     curr_hospital_demand = current_hospital_demand()
     idx = curr_hospital_demand.index
     districts_df = pd.concat([
