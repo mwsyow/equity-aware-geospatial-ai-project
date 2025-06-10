@@ -462,4 +462,120 @@ class HospitalPlanner:
         assigns = [(d, p) for d in self.D for p in self.P if self.y[d][p].value() > 0.5]
         
         return selected, assigns
+    
+    def compute_equity_metric(self) -> float:
+        """
+        Compute an equity disparity metric after optimization:
+        the difference between max and min district coverage ratios.
+        """
+        coverage = {}
+        # Calculate coverage fraction per district safely (check variable values)
+        for d in self.D:
+            coverage[d] = sum(
+                (self.y[d][p].value() if self.y[d][p] is not None and self.y[d][p].value() is not None else 0)
+                * self.districts_gdf.loc[d, 'demand']
+                for p in self.P
+            )
+        vals = list(coverage.values())
+        max_cov = max(vals)
+        min_cov = min(vals)
+        disparity = max_cov - min_cov
+        # Save coverage info for monitoring/logging if needed
+        self.last_coverage = coverage
+        self.last_max_coverage = max_cov
+        self.last_min_coverage = min_cov
+        return disparity
+
+    def optimize_with_agent(self,
+                            demand_weight=0.065,
+                            equity_weight=0.75,
+                            travel_weight=0.065,
+                            time_threshold=30,
+                            equity_tolerance=0.05,
+                            max_iter=5,
+                            adaptive_factor=1.2,
+                            decay_factor=0.9):
+        """
+        Agentic optimization loop: iteratively adjust weights/time threshold
+        based on observed equity disparity until metrics are satisfied or max_iter reached.
+        
+        This implements an autonomous feedback loop:
+        - Observe outcome via equity metric
+        - Evaluate vs. tolerance
+        - Adapt weights and constraints dynamically
+        - Replan optimization model
+        """
+
+        # Initialize current parameters and history
+        cur_dw, cur_ew, cur_tw = demand_weight, equity_weight, travel_weight
+        cur_tt = time_threshold
+        self.current_weights = {
+            'demand_weight': cur_dw,
+            'equity_weight': cur_ew,
+            'travel_weight': cur_tw,
+            'time_threshold': cur_tt
+        }
+        self.history = []
+
+        for i in range(max_iter):
+            # Build and solve model with current weights and constraints
+            self.init_baseline_model(cur_dw, cur_ew, cur_tw, cur_tt)
+            self.add_existing_hospitals_constraints(gdf_existing, supply_weight=cur_dw)
+            self.add_neighbor_constraints(distance_threshold=7000)
+
+            selected, assigns = self.predict()
+            disparity = self.compute_equity_metric()
+
+            # Collect metrics for monitoring and debugging
+            max_cov = self.last_max_coverage
+            min_cov = self.last_min_coverage
+
+            self.history.append({
+                'iter': i,
+                'equity_weight': cur_ew,
+                'demand_weight': cur_dw,
+                'travel_weight': cur_tw,
+                'time_threshold': cur_tt,
+                'disparity': disparity,
+                'max_coverage': max_cov,
+                'min_coverage': min_cov,
+            })
+
+            # Stop if equity disparity within tolerance
+            if disparity <= equity_tolerance:
+                return {
+                    'open_sites': selected,
+                    'assignments': assigns,
+                    'history': self.history,
+                    'final_weights': self.current_weights
+                }
+
+            # --- Agentic adaptive adjustment ---
+            # Increase equity emphasis proportionally to observed disparity
+            cur_ew *= adaptive_factor
+
+            # Adjust accessibility threshold inversely to equity emphasis
+            cur_tt *= (1 / adaptive_factor)
+
+            # Optional: modestly adapt demand and travel weights towards balancing objectives
+            # For example, reduce travel_weight if equity is poor to prioritize equity more
+            cur_tw *= decay_factor if disparity > equity_tolerance else 1.0
+            # Increase demand weight slightly to keep demand coverage relevant
+            cur_dw *= (1 + (disparity * 0.01))
+
+            # Apply decay to prevent runaway weights
+            cur_ew *= decay_factor
+            cur_dw *= decay_factor
+            cur_tw *= decay_factor
+
+            # Update current_weights for external access or further logic
+            self.current_weights = {
+                'demand_weight': cur_dw,
+                'equity_weight': cur_ew,
+                'travel_weight': cur_tw,
+                'time_threshold': cur_tt
+            }
+
+        # If no convergence after max_iter iterations
+        raise RuntimeError(f"Agentic optimization did not converge after {max_iter} iterations.")
         
