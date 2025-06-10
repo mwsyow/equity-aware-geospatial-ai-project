@@ -156,16 +156,19 @@ class HospitalPlanner:
         gdf_saarland_utm = gdf_saarland.to_crs(epsg=CRS_NUM)
         poly_utm = gdf_saarland_utm.loc[0, "geometry"] 
 
-        candidates = []
+        candidates_dfs = []
         for _, row in self.districts_gdf.iterrows():
-            candidates += HospitalPlanner.generate_points(
+            candidates = HospitalPlanner.generate_points(
                 row['centroid'], 
                 radius_km=radius_km, 
                 n=n_samples_per_centroid, 
                 bound_poly=poly_utm
             )
-
-        self.candidates_gdf = gpd.GeoDataFrame(geometry=candidates, crs=CRS)
+            candidates_df = pd.DataFrame(candidates, columns=['geometry'])
+            candidates_df['district_code'] = row['district_code']
+            candidates_dfs.append(candidates_df)
+            
+        self.candidates_gdf = gpd.GeoDataFrame(pd.concat(candidates_dfs), crs=CRS).reset_index(drop=True)
     
     def init_graph(self, graph_path: str = None) -> nx.Graph:
         """
@@ -239,10 +242,15 @@ class HospitalPlanner:
         return ttm
     
     def init_baseline_model(self, 
-                      demand_weight: float = 0.065,
-                      equity_weight: float = 0.75,
-                      travel_weight: float = 0.065,
-                      time_threshold: int = 30) -> pulp.LpProblem:
+        demand_weight: float = 0.065,
+        equity_weight: float = 0.75,
+        travel_weight: float = 0.065,
+        beds_weight: float = 0.065,
+        time_threshold: int = 30,
+        max_beds_per_hospital: int = 300,
+        min_beds_per_hospital: int = 20,
+        max_beds: int = 1500,
+    ) -> pulp.LpProblem:
         """
         Initialize the baseline multi-objective optimization model.
         
@@ -255,6 +263,7 @@ class HospitalPlanner:
             equity_weight (float): Weight for equity improvement objective (0-1)  
             travel_weight (float): Weight for travel time minimization objective (0-1)
             time_threshold (int): Maximum travel time in minutes for coverage
+            max_beds (int): Maximum number of beds for each hospital
             
         Side Effects:
             Sets self.model, self.D, self.P, self.x, self.y with optimization components
@@ -284,24 +293,36 @@ class HospitalPlanner:
         # Decision variables
         x = pulp.LpVariable.dicts("open", P, cat="Binary")  # 1 if hospital opened at candidate p
         y = pulp.LpVariable.dicts("assign", (D, P), cat="Binary")  # 1 if district d assigned to hospital p
-        
-        # Multi-objective function: maximize weighted sum of objectives
+        z = pulp.LpVariable.dicts("bed_allocation", P,                 
+                                lowBound=0.0, 
+                                upBound=max_beds_per_hospital,
+                                cat="Integer") 
+        # number of beds allocated to hospital p
+        beds_reward = {
+            p: sum(demand_norm[d] * a[(d, p)] for d in D)
+            for p in P
+        }
+        bed_term = pulp.lpSum(
+            beds_reward[p] * z[p]/max_beds_per_hospital
+            for p in P
+        )
         model += (
-            demand_weight * pulp.lpSum(
-                demand_norm[d] * y[d][p] 
-                for d in D 
-                for p in P 
-            )
+            # demand_weight * pulp.lpSum(
+            #     demand_norm[d] * y[d][p] 
+            #     for d in D 
+            #     for p in P 
+            # )
             + equity_weight * pulp.lpSum(
                 equity_norm[d] * y[d][p] 
                 for d in D 
                 for p in P 
             )
-            + (1 - travel_weight * pulp.lpSum(
+            - travel_weight * pulp.lpSum(
                 c_norm[(d, p)] * y[d][p]       
                 for d in D 
                 for p in P 
-            ))
+            )
+            + beds_weight * bed_term
         ), "Total_Score"
         
         # Constraints
@@ -312,11 +333,20 @@ class HospitalPlanner:
                 # Can only assign within time threshold
                 model += y[d][p] <= a[(d, p)], f"Assign_within_Tmax_{d}_{p}"
 
+        for p in P:
+            # Can only allocate beds if hospital is open
+            model += z[p] <= x[p] * max_beds_per_hospital, f"Beds_if_open_{p}"
+            model += z[p] >= min_beds_per_hospital * x[p], f"Beds_min_if_open_{p}"
+            
+        # Total allocated beds should not exceed max_beds
+        model += pulp.lpSum(z[p] for p in P) <= max_beds, "Total_Beds_Limit"
+
         self.model = model
         self.D = D
         self.P = P
         self.x = x
         self.y = y
+        self.z = z
     
     def add_existing_hospitals_constraints(self, 
         gdf: gpd.GeoDataFrame, 
@@ -376,12 +406,12 @@ class HospitalPlanner:
         supply_norm = self.normalize_metric(supply_raw)
         
         # Add supply oversaturation penalty to objective
-        self.model += (
-            (1 - supply_weight * pulp.lpSum(
+        self.model.objective -= (
+            supply_weight * pulp.lpSum(
                 supply_norm[p] * self.x[p] 
                 for p in self.P 
-            ))
-        ), "Total_Supply"
+            )
+        )
         
         # Add proximity constraints: prevent placement near existing hospitals
         for p in self.P:
@@ -461,5 +491,8 @@ class HospitalPlanner:
         # Extract solution: district-hospital assignments  
         assigns = [(d, p) for d in self.D for p in self.P if self.y[d][p].value() > 0.5]
         
-        return selected, assigns
+        # Extract solution: bed allocations
+        beds = {p: self.z[p].value() for p in self.P}
+        
+        return selected, assigns, beds
         
