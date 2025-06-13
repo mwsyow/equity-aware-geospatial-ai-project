@@ -26,6 +26,7 @@ HOSPITAL_DATA_PATH = os.path.join(RAW_DIR, "Krankenhausverzeichnis_2021.xlsx" )
 NUTS_DATA_PATH = os.path.join(RAW_DIR, "NUTS_RG_01M_2021_4326_LEVL_3.shp")
 
 STATUS_QUO_MODEL_PATH = os.path.join(OUT_DIR, "saarland_hospitals_with_coords.xlsx") 
+POLICY_MAKER_MODEL_PATH = os.path.join(OUT_DIR, "policy_maker_model.xlsx") 
 MAIN_MODEL_PATH = os.path.join(OUT_DIR, "main.xlsx") 
 DEMAND_BASED_MODEL_PATH = os.path.join(OUT_DIR, "demand_based_model.xlsx") 
 DEPRIVATION_AWARE_MODEL_PATH = os.path.join(OUT_DIR, "deprivation_aware_model.xlsx") 
@@ -75,6 +76,7 @@ def get_TAI_scaled_for_model(model_name: str) -> pd.DataFrame:
 
     MODEL_PATHS = {
         "status_quo_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_status_quo_model.xlsx",
+        "policy_maker_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_policy_maker_model.xlsx",
         "demand_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_demand_based_model.xlsx",
         "deprivation_aware_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_deprivation_aware_model.xlsx",
         "accessibility_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_accessibility_based_model.xlsx",
@@ -94,7 +96,7 @@ def get_TAI_scaled_for_model(model_name: str) -> pd.DataFrame:
     return df
 
 
-# mean_travel_time_scaled_df = get_TAI_scaled()
+# mean_travel_time_scaled_df = get_TAI_scaled_for_model("policy_maker_model")
 # print("\n\n✅ Mean Travel Time Scaled DataFrame across all models ✅\n\n")
 # print(mean_travel_time_scaled_df)
 # print("\n\n")
@@ -118,6 +120,7 @@ def accessibility_score():
 
     MODEL_PATHS = {
         "status_quo_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_status_quo_model_travel_time_from_sample_to_hospital.xlsx",
+        "policy_maker_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_policy_maker_model_travel_time_from_sample_to_hospital.xlsx",
         "demand_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_demand_based_model_travel_time_from_sample_to_hospital.xlsx",
         "deprivation_aware_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_deprivation_aware_model_travel_time_from_sample_to_hospital.xlsx",
         "accessibility_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_accessibility_based_model_travel_time_from_sample_to_hospital.xlsx",
@@ -402,12 +405,13 @@ def RUN(HOSPITAL_DATA, MODEL_NAME):
 # Main entry point to run the pipeline 
 
 # if __name__ == "__main__":
-#     RUN(STATUS_QUO_MODEL_PATH, "RES_status_quo_model")
+#     RUN(POLICY_MAKER_MODEL_PATH, "RES_policy_maker_model")
 
 # Models 
 # The models are run separately to get the results for each model.
 
 # 1. STATUS_QUO_MODEL_PATH, "RES_status_quo_model"
+# 2. POLICY_MAKER_MODEL_PATH, "RES_policy_maker_model"
 # 2. MAIN_MODEL_PATH , "RES_main_model"
 # 3. DEMAND_BASED_MODEL_PATH , "RES_demand_based_model"
 # 4. DEPRIVATION_AWARE_MODEL_PATH , "RES_deprivation_aware_model"
