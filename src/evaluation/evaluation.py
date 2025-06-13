@@ -32,6 +32,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
+import os
+
+
 
 def compute_summary(results_dict, agg_func="mean"):
     """
@@ -213,7 +216,7 @@ def plot_demand_weighted_lorenz(models_data, title="Demand-Weighted Lorenz Curve
     plt.close()
 
 def main():
-    """
+    """model
     Example usage with dummy data. Replace `results` and `demands` with actual evaluation results.
     """
     rng = np.random.default_rng(42)
@@ -222,27 +225,55 @@ def main():
     # Dummy demand per district
     demands = {d: rng.uniform(1000, 5000) for d in districts}
     # Dummy results for three models
-    models = ["GovtPolicyBaseline", "RandomAdd", "OurModel"]
+
+    # Build the path to the experiments/results directory
+    current_dir = os.path.dirname(__file__)
+    experiments_results_dir = os.path.join(current_dir, "..", "experiments", "results")
+
+    # Define the mapping from model names to their Excel file names
+    excel_files = {
+        "Main": "main.xlsx",
+        "GovtPolicyBaseline": "policy_maker_model.xlsx",
+        "deprivation_aware_model": "deprivation_aware_model.xlsx",
+        "demand_based_model": "demand_based_model.xlsx",
+    }
+
+    # Read each Excel file into a results dictionary
     results = {}
-    for model in models:
-        # For each metric, generate dummy per-district values
+    # In this example, we assume the Excel file has a column 'District' and several metric columns.
+    for model, filename in excel_files.items():
+        path = os.path.join(experiments_results_dir, filename)
+        
         results[model] = {
             "EquityIndex": {d: rng.uniform(0.2, 0.6) for d in districts},
             "AvgTravelTime": {d: rng.uniform(10, 50) for d in districts},
-            "P95_TravelTime": {d: rng.uniform(20, 80) for d in districts},
             "HDR": {d: rng.uniform(0.01, 0.1) for d in districts},
             "OverServedCount": {d: rng.choice([0,1], p=[0.8,0.2]) for d in districts},
-            "HSI": {d: rng.uniform(0.5, 1.5) for d in districts},
-            # CapacityToDemandRatio is needed for Lorenz/Gini
-            "CapacityToDemandRatio": {d: rng.uniform(0.5, 1.5) for d in districts},
+            "HFDR": {d: rng.uniform(0.5, 1.5) for d in districts},
         }
+        
+    # hospital_file_paths = [""]
+    # models = ["GovtPolicyBaseline", "RandomAdd", "OurModel"]
+    # results = {}
+    # for model in models:
+    #     # For each metric, generate dummy per-district values
+    #     results[model] = {
+    #         "EquityIndex": {d: rng.uniform(0.2, 0.6) for d in districts},
+    #         "AvgTravelTime": {d: rng.uniform(10, 50) for d in districts},
+    #         "P95_TravelTime": {d: rng.uniform(20, 80) for d in districts},
+    #         "HDR": {d: rng.uniform(0.01, 0.1) for d in districts},
+    #         "OverServedCount": {d: rng.choice([0,1], p=[0.8,0.2]) for d in districts},
+    #         "HSI": {d: rng.uniform(0.5, 1.5) for d in districts},
+    #         # CapacityToDemandRatio is needed for Lorenz/Gini
+    #         "CapacityToDemandRatio": {d: rng.uniform(0.5, 1.5) for d in districts},
+    #     }
 
     # 1) Aggregate per-district into summary (mean across districts)
     summary_df = compute_summary(results, agg_func="mean")
     print("Summary (mean) per model per metric:\n", summary_df)
 
     # 2) Decide which metrics to invert (lower raw is better)
-    invert_metrics = {"EquityIndex", "AvgTravelTime", "P95_TravelTime", "HDR", "OverServedCount"}
+    invert_metrics = {"EquityIndex", "AvgTravelTime", "HDR", "OverServedCount"}
     # If HSI needs special handling (e.g. deviation from ideal), precompute separately.
 
     # 3) Normalize so higher = better in [0,1]
