@@ -30,6 +30,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 import osmnx as ox
 import pulp
+import cma
 
 # Geographic coordinate system configuration
 CRS_NUM = 4326
@@ -214,7 +215,7 @@ class HospitalPlanner:
         self.G = G
     
     @staticmethod
-    def build_ttm(G: nx.Graph, gdf1: gpd.GeoDataFrame, gdf2: gpd.GeoDataFrame, weight: str) -> dict:
+    def calculate_ttm(G: nx.Graph, gdf1: gpd.GeoDataFrame, gdf2: gpd.GeoDataFrame, weight: str) -> dict:
         """
         Build travel time/distance matrix between two sets of locations.
         
@@ -241,6 +242,14 @@ class HospitalPlanner:
                 ttm[(i, j)] = t
         return ttm
     
+    def build_travel_time_matrix_d2c(self) -> None:
+        """
+        Build travel time matrix (district -> candidate) in minutes
+        """
+        # Build travel time matrix (district -> candidate) in minutes
+        ttm_district_to_candidate = HospitalPlanner.build_ttm(self.G, self.districts_gdf, self.candidates_gdf, 'travel_time')
+        self.ttm_district_to_candidate = {k: v / 60 for k, v in ttm_district_to_candidate.items()}  # convert seconds to minutes
+        
     def init_baseline_model(self, 
         demand_weight: float = 0.065,
         equity_weight: float = 0.75,
@@ -271,10 +280,7 @@ class HospitalPlanner:
         # Define problem data from existing variables
         D = list(self.districts_gdf.index)  # districts
         P = list(self.candidates_gdf.index)  # candidate locations
-
-        # Build travel time matrix (district -> candidate) in minutes
-        c = HospitalPlanner.build_ttm(self.G, self.districts_gdf, self.candidates_gdf, 'travel_time')
-        c = {k: v / 60 for k, v in c.items()}  # convert seconds to minutes
+        c = self.ttm_district_to_candidate
         
         # Extract and normalize objective metrics
         demand = dict(zip(self.districts_gdf.index, self.districts_gdf['demand']))
@@ -307,12 +313,7 @@ class HospitalPlanner:
             for p in P
         )
         model += (
-            # demand_weight * pulp.lpSum(
-            #     demand_norm[d] * y[d][p] 
-            #     for d in D 
-            #     for p in P 
-            # )
-            + equity_weight * pulp.lpSum(
+            equity_weight * pulp.lpSum(
                 equity_norm[d] * y[d][p] 
                 for d in D 
                 for p in P 
@@ -347,12 +348,30 @@ class HospitalPlanner:
         self.x = x
         self.y = y
         self.z = z
+        
+    def build_distance_metric_c2eh(self, gdf: gpd.GeoDataFrame) -> None:
+        hospital_gdf = gdf.copy()
+        
+        # Map existing hospitals to graph nodes
+        hospital_gdf['node'] = ox.nearest_nodes(
+            self.G,
+            hospital_gdf.geometry.x,
+            hospital_gdf.geometry.y
+        )
+        
+        # Calculate distances from candidates to existing hospitals
+        self.distance_existing_hospitals = HospitalPlanner.calculate_ttm(
+            self.G,
+            self.candidates_gdf,
+            hospital_gdf,
+            'length'
+        )
+        self.hospital_gdf = hospital_gdf
     
     def add_existing_hospitals_constraints(self, 
-        gdf: gpd.GeoDataFrame, 
         supply_weight: float = 0.065, 
-        distance_threshold: int = 7_000,
-        num_neighbors: int = 0
+        num_neighbors: int = 0,
+        distance_threshold: int = 7_000
         ) -> pulp.LpProblem:
         """
         Add constraints considering existing hospital infrastructure.
@@ -371,34 +390,17 @@ class HospitalPlanner:
             Modifies self.model by adding supply penalty and proximity constraints
         """
         candidates_gdf = self.candidates_gdf.copy()
-        hospital_gdf = gdf.copy()
-        
-        # Map existing hospitals to graph nodes
-        hospital_gdf['node'] = ox.nearest_nodes(
-            self.G,
-            hospital_gdf.geometry.x,
-            hospital_gdf.geometry.y
-        )
-        
-        # Calculate distances from candidates to existing hospitals
-        distance_existing_hospitals = HospitalPlanner.build_ttm(
-            self.G,
-            candidates_gdf,
-            hospital_gdf,
-            'length'
-        )
         
         # Find existing hospital neighbors for each candidate
         is_existing_hospitals_neighbors = {}
         for h in candidates_gdf.index: 
             is_existing_hospitals_neighbors[h] = []
-            for (i, j), dist in distance_existing_hospitals.items():
+            for (i, j), dist in self.distance_existing_hospitals.items():
                 if dist <= distance_threshold and i == h and i != j:
                     is_existing_hospitals_neighbors[h].append(j)
-        
         # Calculate total supply (existing + new hospital capacity)
         candidates_gdf['total_supply'] = [
-            hospital_gdf.iloc[is_existing_hospitals_neighbors[h]]['MaxBeds'].sum() + 1 
+            self.hospital_gdf.iloc[is_existing_hospitals_neighbors[h]]['MaxBeds'].sum() + 1 
             for h in candidates_gdf.index
         ]
         
@@ -415,8 +417,16 @@ class HospitalPlanner:
         
         # Add proximity constraints: prevent placement near existing hospitals
         for p in self.P:
-            if len(is_existing_hospitals_neighbors[p]) >= num_neighbors:
+            if len(self.is_existing_hospitals_neighbors[p]) >= num_neighbors:
                 self.model += self.x[p] == 0, f"Close_if_has_more_than_{num_neighbors}_existing_hospitals_neighbors_{p}"
+    
+    def build_distance_metric_c2c(self) -> None:
+        self.is_candidate_neighbors = HospitalPlanner.calculate_ttm(
+            self.G,
+            self.candidates_gdf,
+            self.candidates_gdf,
+            'length'
+        )
     
     def add_neighbor_constraints(self, distance_threshold: int = 7_000) -> pulp.LpProblem:
         """
@@ -431,16 +441,7 @@ class HospitalPlanner:
         Side Effects:
             Modifies self.model by adding neighbor exclusion constraints
         """
-        # Calculate distances between all candidate pairs
-        is_candidate_neighbors = HospitalPlanner.build_ttm(
-            self.G,
-            self.candidates_gdf,
-            self.candidates_gdf,
-            'length'
-        )
-        
-        # Filter to only include neighbors within threshold
-        is_candidate_neighbors = {k: v for k, v in is_candidate_neighbors.items() if v <= distance_threshold}
+        is_candidate_neighbors = {k: v for k, v in self.is_candidate_neighbors.items() if v <= distance_threshold}
         
         # Add mutual exclusion constraints for neighboring candidates
         for (p1, p2), is_neighbor in is_candidate_neighbors.items():
@@ -467,7 +468,7 @@ class HospitalPlanner:
         # Add new constraint for exact number of facilities
         self.model += pulp.lpSum(self.x[p] for p in self.P) == k, "Open_k_Facilities"
         
-    def predict(self) -> tuple[list[int], list[tuple[int, int]]]:
+    def predict_hospital_locations(self) -> tuple[list[int], list[tuple[int, int]]]:
         """
         Solve the optimization model and return optimal hospital locations.
         
@@ -495,4 +496,30 @@ class HospitalPlanner:
         beds = {p: self.z[p].value() for p in self.P}
         
         return selected, assigns, beds
-        
+    
+    def compute_loss(self):
+        """
+        TODO: Implement loss function
+        """        
+    
+    def evaluate(self, weights: list[float]):
+        """
+        TODO: Implement evaluation
+        """
+    
+    def predict(self, weights: list[float], step_size: float):
+        """
+        TODO: Implement prediction
+        """
+        es = cma.CMAEvolutionStrategy(x0=weights, sigma0=step_size)
+        while not es.stop():
+            # generate λ candidate weight-vectors
+            solutions = es.ask()
+            # evaluate in parallel however you like
+            losses = [self.evaluate(x) for x in solutions]
+            # feed back to CMA-ES
+            es.tell(solutions, losses)
+            es.disp()     # optional progress print
+
+        # final best
+        best = es.best.get()[0]
