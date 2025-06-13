@@ -33,6 +33,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os
+from metrics.equity_index_metric import calculate_new_equity_index
+from metrics.hdr_metric import calculate_hdr
+from metrics.overserved_area_metric import compute_overserved_area_count
+from metrics.hfdr_metric import calculate_hfdr
+from metrics.accessibility_score_metric import accessibility_score
+
+# Add the parent directory to sys.path so Python can find the sibling 'metrics' package
+current_dir = os.path.dirname(__file__)
+parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+# Now you can import functions from modules in the 'metrics' folder
+# For example, if there is a file named 'metrics_utils.py' with a function 'compute_metric', do:
 
 
 
@@ -230,12 +244,21 @@ def main():
     current_dir = os.path.dirname(__file__)
     experiments_results_dir = os.path.join(current_dir, "..", "experiments", "results")
 
+
+    # from metrics.equity_index_metric import calculate_new_equity_index
+    # from metrics.hdr_metric import calculate_hdr
+    # from metrics.overserved_area_metric import compute_overserved_area_count
+    # from metrics.hfdr_metric import calculate_hfdr
+    # from metrics.accessibility_score_metric import accessibility_score
+
     # Define the mapping from model names to their Excel file names
     excel_files = {
-        "Main": "main.xlsx",
-        "GovtPolicyBaseline": "policy_maker_model.xlsx",
+        "main": "main.xlsx",
+        "policy_maker_model": "policy_maker_model.xlsx",
         "deprivation_aware_model": "deprivation_aware_model.xlsx",
         "demand_based_model": "demand_based_model.xlsx",
+        "status_quo_model": "status_quo_model.xlsx",
+        "accessibility_model": "accessibility_based_model.xlsx",
     }
 
     # Read each Excel file into a results dictionary
@@ -245,28 +268,24 @@ def main():
         path = os.path.join(experiments_results_dir, filename)
         
         results[model] = {
-            "EquityIndex": {d: rng.uniform(0.2, 0.6) for d in districts},
-            "AvgTravelTime": {d: rng.uniform(10, 50) for d in districts},
-            "HDR": {d: rng.uniform(0.01, 0.1) for d in districts},
-            "OverServedCount": {d: rng.choice([0,1], p=[0.8,0.2]) for d in districts},
-            "HFDR": {d: rng.uniform(0.5, 1.5) for d in districts},
+            "EquityScore": calculate_new_equity_index(path, modelname=model),
+            "HDR": calculate_hdr(path),
+            "OverServedAreaCount": compute_overserved_area_count(path),
+            "HFDR": calculate_hfdr(path),
         }
-        
-    # hospital_file_paths = [""]
-    # models = ["GovtPolicyBaseline", "RandomAdd", "OurModel"]
-    # results = {}
-    # for model in models:
-    #     # For each metric, generate dummy per-district values
-    #     results[model] = {
-    #         "EquityIndex": {d: rng.uniform(0.2, 0.6) for d in districts},
-    #         "AvgTravelTime": {d: rng.uniform(10, 50) for d in districts},
-    #         "P95_TravelTime": {d: rng.uniform(20, 80) for d in districts},
-    #         "HDR": {d: rng.uniform(0.01, 0.1) for d in districts},
-    #         "OverServedCount": {d: rng.choice([0,1], p=[0.8,0.2]) for d in districts},
-    #         "HSI": {d: rng.uniform(0.5, 1.5) for d in districts},
-    #         # CapacityToDemandRatio is needed for Lorenz/Gini
-    #         "CapacityToDemandRatio": {d: rng.uniform(0.5, 1.5) for d in districts},
-    #     }
+    
+
+    accessibility_score_results = accessibility_score()
+
+    for acc in accessibility_score_results:
+        model_name = acc["model"]
+        if model_name in results:
+            results[model_name]["AccessibilityScore"] = {
+                "mean_travel_time_mins": acc["mean_travel_time_mins"],
+                "median_travel_time_mins": acc["median_travel_time_mins"],
+                "p95_travel_time_mins": acc["p95_travel_time_mins"]
+            }
+
 
     # 1) Aggregate per-district into summary (mean across districts)
     summary_df = compute_summary(results, agg_func="mean")
