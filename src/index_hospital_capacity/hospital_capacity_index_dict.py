@@ -120,7 +120,8 @@ def calculate_hospital_capacity_index() -> dict:
     min_adj = merged_df["AdjBeds"].min()
     max_adj = merged_df["AdjBeds"].max()
     merged_df["HospitalCapacityIndex"] = 1 - (merged_df["AdjBeds"] - min_adj) / (max_adj - min_adj)
-
+    # Ensure HospitalCapacityIndex is numeric and handle any NaN values
+    merged_df["HospitalCapacityIndex"] = pd.to_numeric(merged_df["HospitalCapacityIndex"], errors='coerce').fillna(1)
     # Convert to dictionary: {district: HospitalCapacityIndex}
     result_dict = dict(zip(merged_df["district"], merged_df["HospitalCapacityIndex"].round(4)))
 
