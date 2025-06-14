@@ -5,20 +5,20 @@ import geopandas as gpd
 from shapely.geometry import Point
 from enum import StrEnum
 
-from ai_planner.agentic_ai_planner_2 import AgenticPlannerWithPrediction
-from index_demand_forecast.demand_forecast import (
+from .ai_planner.planner import HospitalPlanner, CRS
+from .index_demand_forecast.demand_forecast import (
     forecast_demand_per_district_in_saarland as run_demand_forecast,
     df_hospital_inpatients,
     df_saarland_diseases_history,
     CUT_OFF_YEAR, YEAR, REGION_CODE, VALUE
 )
-from index_demand_forecast.demand_forecast import forecast_demand_per_district_in_saarland as run_demand_forecast
-from index_elderly_share.elderly_share import run as run_elderly_share
-from index_gisd.gisd import run as run_gisd
-from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
-from index_travel_accessibility.TAI import RUN as run_travel_time_index
-from index_travel_accessibility.travel_time_and_centroid import (
-    get_centroids, get_hospital_df, get_travel_time_matrix,
+from .index_demand_forecast.demand_forecast import forecast_demand_per_district_in_saarland as run_demand_forecast
+from .index_elderly_share.elderly_share import run as run_elderly_share
+from .index_gisd.gisd import run as run_gisd
+from .index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
+from .index_travel_accessibility.TAI import RUN as run_travel_time_index
+from .index_travel_accessibility.travel_time_and_centroid import (
+    get_centroids, 
     map_predicted_and_existing_hospitals
 )
 class Index(StrEnum):
@@ -135,32 +135,45 @@ def current_hospital_demand() -> pd.Series:
     curr_demand.index = [str(i) for i in curr_demand.index]
     return curr_demand
 
+def get_district_gdf(equity_df: pd.DataFrame) -> gpd.GeoDataFrame:# Load the Excel file
+    file_path = os.path.join(os.path.dirname(__file__), "index_travel_accessibility", "data", "processed", "saarland_districts_sample_points.xlsx")
+    df_sample_points = pd.read_excel(file_path)
+    SAARLAND_DISTRICT_MAPPING = {
+        "Saarlouis": 10044,
+        "St. Wendel": 10046,
+        "Saarpfalz-Kreis": 10045,
+        "Merzig-Wadern": 10042,
+        "Neunkirchen": 10043,
+        "Regionalverband Saarbrücken": 10041 
+    }
+    # Display basic information about the dataframe
+    df_sample_points = df_sample_points.replace(SAARLAND_DISTRICT_MAPPING)
+    df_sample_points = df_sample_points.set_index('district')
+
+    #STEP1: Load and Prepare District Data (Centroids)
+    curr_hospital_demand = current_hospital_demand()
+    idx = curr_hospital_demand.index
+
+    # Create the districts dataframe without MultiIndex
+    districts_df = pd.DataFrame({
+        "demand": curr_hospital_demand.reindex(idx),
+        "equity_index": equity_df.reindex(idx),
+        "centroid": centroid().reindex(idx)
+    })
+    districts_df.index = districts_df.index.astype(int)
+    districts_df = df_sample_points.join(districts_df[['demand', 'equity_index']], how='left')
+    districts_df["centroid"] = districts_df.apply(
+        lambda row: Point(row["longitude"], row["latitude"]),
+        axis=1
+    )
+    # Create GeoDataFrame properly
+    districts_gdf = gpd.GeoDataFrame(districts_df, geometry="centroid", crs=CRS)
+    districts_gdf = districts_gdf.reset_index().rename(columns={'district': 'district_code'})
+    return districts_gdf
+
 def main():
-    """
-    Main entry point for the equity-aware hospital planning system.
-    
-    Workflow:
-    1. Loads hospital and district data
-    2. Assembles equity indexes with weights
-    3. Calculates current demand
-    4. Initializes AI planner with parameters:
-        - hospitals: DataFrame with hospital information
-        - districts: GeoDataFrame with district metrics
-        - travel_time: Matrix of travel times between sites
-        - budget_beds: Total beds available (1000)
-        - max_open_sites: Maximum number of hospitals (2)
-        - alpha: Cost vs equity weight (0.6)
-        - max_travel: Maximum travel time in minutes (30)
-    5. Runs optimization
-    6. Visualizes results on map
-    
-    The function saves the resulting map visualization to the results directory.
-    """
-    
-    hospitals_df = get_hospital_df()
-    hospitals_df = hospitals_df.set_index("SiteID")
-        
     index_df = assemble_indexes()
+    # Set the weights for the indexes
     weight = {
         Index.FORECAST_DEMAND: 0.25,
         Index.ELDERLY_SHARE: 0.25,
@@ -169,43 +182,36 @@ def main():
         Index.TRAVEL_TIME: 0.25,
         Index.ACCESSIBILITY: 0.25,
     }
-    curr_hospital_demand = current_hospital_demand()
-    idx = curr_hospital_demand.index
-    districts_df = pd.concat([
-        curr_hospital_demand.reindex(idx),
-        equity_index(index_df, weight).reindex(idx),
-        centroid().reindex(idx)
-    ], axis=1, keys=["Demand", "EquityIndex", "centroid"])
-    districts_gdf = gpd.GeoDataFrame(districts_df, geometry="centroid")
+    equity_df = equity_index(index_df, weight)
+    districts_gdf = get_district_gdf(equity_df)
+    planner = HospitalPlanner(districts_gdf)
+    n_samples_per_centroid = 1
+    radius_km = 5
+    planner.generate_candidates(n_samples_per_centroid=n_samples_per_centroid, radius_km=radius_km)
+    planner.init_graph()
+    planner.build_matrix()
+    
+    initial_weights = {
+        'equity_weight': 0.75,
+        'travel_weight': 0.065,
+        'beds_weight': 0.065,
+        'supply_weight': 0.065,
+    }
 
-    travel_time_dict = get_travel_time_matrix()
-
-    #travel time planner 
-
-    # Run planner
-    planner = AgenticPlannerWithPrediction(
-        hospitals_df,
-        districts_gdf,
-        travel_time_dict,
-        budget_beds=1000,
-        max_open_sites=2,
-        alpha=0.6,
-        max_travel=30,
-        predict_new=4
+    selected_candidates = planner.run(
+        initial_weights=initial_weights,
+        step_size=0.01,
+        num_neighbors=2,
+        eh_distance_threshold=7_000,
+        c2c_distance_threshold=7_000,
+        time_threshold=30,
+        max_beds_per_hospital=300,
+        min_beds_per_hospital=20,
+        max_beds=1500,
+        k=2,
     )
-
-    plan = planner.optimize_with_bayesian()
-
-    print("Open sites:", plan["open_sites"])
-    print("Beds allocation:", plan["beds_alloc"])
-    print("Objective value:", plan["objective"])
-
-    save_path = os.path.join(os.path.dirname(__file__), "results", "saarland_map_with_predicted_and_exisiting_hospitals.html")
-    # planner.plot_predicted_hospitals()
-    map_predicted_and_existing_hospitals(
-        save_path,
-        planner.predicted_hospitals
-    )
-
+    path = os.path.join(os.path.dirname(__file__), "results", "sample_points.html")
+    map_predicted_and_existing_hospitals(path, selected_candidates)
+    
 if __name__ == "__main__":
     main()

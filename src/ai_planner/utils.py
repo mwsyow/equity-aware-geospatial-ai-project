@@ -1,7 +1,7 @@
 import geopandas as gpd
 from shapely.geometry import Point
 import os
-from index_travel_accessibility.travel_time_and_centroid import (
+from ..index_travel_accessibility.travel_time_and_centroid import (
     get_hospital_df,
 )
 
