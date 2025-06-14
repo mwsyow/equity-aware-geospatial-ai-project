@@ -156,6 +156,7 @@ def main():
     
     The function saves the resulting map visualization to the results directory.
     """
+    
     hospitals_df = get_hospital_df()
     hospitals_df = hospitals_df.set_index("SiteID")
         
