@@ -12,6 +12,7 @@ The optimization model balances:
 - Travel time accessibility
 - Proximity to existing hospitals
 - Resource supply constraints
+- Bed allocation optimization
 
 Dependencies:
     - networkx: For road network graph operations
@@ -21,6 +22,7 @@ Dependencies:
     - shapely: For geometric operations
     - osmnx: For OpenStreetMap data retrieval
     - pulp: For linear programming optimization
+    - cma: For CMA-ES optimization
 """
 
 import networkx as nx
@@ -283,14 +285,16 @@ class HospitalPlanner:
         minimization. Uses maximum coverage formulation with time thresholds.
         
         Args:
-            demand_weight (float): Weight for demand coverage objective (0-1)
-            equity_weight (float): Weight for equity improvement objective (0-1)  
+            equity_weight (float): Weight for equity improvement objective (0-1)
             travel_weight (float): Weight for travel time minimization objective (0-1)
+            beds_weight (float): Weight for bed allocation optimization (0-1)
             time_threshold (int): Maximum travel time in minutes for coverage
-            max_beds (int): Maximum number of beds for each hospital
+            max_beds_per_hospital (int): Maximum number of beds per hospital
+            min_beds_per_hospital (int): Minimum number of beds per hospital
+            max_beds (int): Maximum total number of beds across all hospitals
             
         Side Effects:
-            Sets self.model, self.D, self.P, self.x, self.y with optimization components
+            Sets self.model, self.D, self.P, self.x, self.y, self.z with optimization components
         """
         # Define problem data from existing variables
         D = list(self.districts_gdf.index)  # districts
@@ -546,7 +550,6 @@ class HospitalPlanner:
                 loss[district_code] = sum(temp_cent) / len(temp_cent) if len(temp_cent) > 0 else 0
         return sum(list(loss.values())) / len(loss)
     
-        
     def predict_location(self, 
         weights: dict[str, float],
         time_threshold: int = 30,
@@ -559,7 +562,27 @@ class HospitalPlanner:
         k: int = 10,
     ):
         """
-        TODO: Implement evaluation
+        Predict optimal hospital locations using the configured optimization model.
+        
+        Args:
+            weights (dict[str, float]): Dictionary of optimization weights:
+                - equity_weight: Weight for equity improvement
+                - travel_weight: Weight for travel time minimization
+                - beds_weight: Weight for bed allocation optimization
+                - supply_weight: Weight for supply oversaturation penalty
+            time_threshold (int): Maximum travel time in minutes for coverage
+            max_beds_per_hospital (int): Maximum number of beds per hospital
+            min_beds_per_hospital (int): Minimum number of beds per hospital
+            max_beds (int): Maximum total number of beds across all hospitals
+            num_neighbors (int): Maximum allowed existing hospital neighbors
+            eh_distance_threshold (int): Minimum distance from existing hospitals (meters)
+            c2c_distance_threshold (int): Minimum distance between new hospitals (meters)
+            k (int): Number of hospitals to build
+            
+        Returns:
+            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: 
+                - Selected candidate locations with bed allocations
+                - Existing hospital locations
         """
         self.init_baseline_model(
             equity_weight=weights['equity_weight'],
@@ -605,7 +628,25 @@ class HospitalPlanner:
         k: int = 10,
     ):
         """
-        TODO: Implement prediction
+        Run the hospital location optimization using CMA-ES.
+        
+        Uses Covariance Matrix Adaptation Evolution Strategy (CMA-ES) to find
+        optimal weights for the multi-objective optimization model.
+        
+        Args:
+            initial_weights (dict[str, float]): Initial optimization weights
+            step_size (float): Initial step size for CMA-ES
+            num_neighbors (int): Maximum allowed existing hospital neighbors
+            eh_distance_threshold (int): Minimum distance from existing hospitals (meters)
+            c2c_distance_threshold (int): Minimum distance between new hospitals (meters)
+            time_threshold (int): Maximum travel time in minutes for coverage
+            max_beds_per_hospital (int): Maximum number of beds per hospital
+            min_beds_per_hospital (int): Minimum number of beds per hospital
+            max_beds (int): Maximum total number of beds across all hospitals
+            k (int): Number of hospitals to build
+            
+        Returns:
+            gpd.GeoDataFrame: Selected candidate locations with optimal bed allocations
         """
         weights = list(initial_weights.values())
         losses = []

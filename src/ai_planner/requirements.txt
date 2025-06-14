@@ -5,3 +5,4 @@ scikit-learn==1.6.1
 matplotlib==3.10.3
 shapely==2.1.1
 bayesian-optimization==2.0.4
+cma==4.2.0

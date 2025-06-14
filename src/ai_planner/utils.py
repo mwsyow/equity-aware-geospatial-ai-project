@@ -6,6 +6,32 @@ from ..index_travel_accessibility.travel_time_and_centroid import (
 )
 
 def get_existing_hospitals_gdf(crs: str='EPSG:4326'):# Modifying the existing hospitals DataFrame to Prediction DataFrame format
+    """
+    Get existing hospitals data as a GeoDataFrame with standardized format.
+    
+    This function processes existing hospital data by:
+    1. Loading hospital data and standardizing column names
+    2. Creating geometry points from latitude/longitude coordinates
+    3. Performing spatial join with NUTS level 3 regions to get district information
+    4. Mapping district names to official Saarland district codes
+    
+    Args:
+        crs (str, optional): Coordinate reference system to use. Defaults to 'EPSG:4326'.
+            This is the standard WGS84 coordinate system used for GPS coordinates.
+    
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame containing existing hospitals with columns:
+            - geometry: Point geometry of hospital location
+            - district_code: Official Saarland district code (e.g., '10041' for Saarbrücken)
+            - node: Hospital identifier
+            - bed_allocation: Number of beds allocated to the hospital
+            - Lat: Latitude coordinate (rounded to 6 decimal places)
+            - Lon: Longitude coordinate (rounded to 6 decimal places)
+    
+    Note:
+        The function assumes the existence of a NUTS level 3 shapefile in the
+        index_travel_accessibility/data/raw directory for spatial joining.
+    """
     existing_hospitals = get_hospital_df()
 
     existing_hospitals.rename(columns={
