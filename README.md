@@ -72,7 +72,6 @@ src/
 
 2. **Data Preparation**
    - Ensure all required data files are in their respective module directories
-   - Check the `cache/` directory for any cached data requirements
 
 ### Running the Project
 
