@@ -75,12 +75,12 @@ def get_TAI_scaled_for_model(model_name: str) -> pd.DataFrame:
     """
 
     MODEL_PATHS = {
-        "status_quo_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_status_quo_model.xlsx",
-        "policy_maker_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_policy_maker_model.xlsx",
-        "demand_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_demand_based_model.xlsx",
-        "deprivation_aware_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_deprivation_aware_model.xlsx",
-        "accessibility_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_accessibility_based_model.xlsx",
-        "main_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_main_model.xlsx",
+        "status_quo_model": "src\\evaluation\\data\\processed\\RES_status_quo_model.xlsx",
+        "policy_maker_model": "src\\evaluation\\data\\processed\\RES_policy_maker_model.xlsx",
+        "demand_based_model": "src\\evaluation\\data\\processed\\RES_demand_based_model.xlsx",
+        "deprivation_aware_model": "src\\evaluation\\data\\processed\\RES_deprivation_aware_model.xlsx",
+        "accessibility_based_model": "src\\evaluation\\data\\processed\\RES_accessibility_based_model.xlsx",
+        "main_model": "src\\evaluation\\data\\processed\\RES_main_model.xlsx",
     }
 
     if model_name not in MODEL_PATHS:

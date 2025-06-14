@@ -2,9 +2,13 @@ from index_demand_forecast.demand_forecast import forecast_demand_per_district_i
 from index_elderly_share.elderly_share import run as run_elderly_share
 from index_gisd.gisd import run as run_gisd
 from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
-from accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scaled_for_model
+from metrics.accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scaled_for_model
 import os
 import pandas as pd
+from enum import StrEnum
+import numpy as np
+
+
 
 SAARLAND_AGS = [
     "10041",  # Regionalverband Saarbrücken
@@ -112,7 +116,7 @@ def assemble_indexes() -> pd.DataFrame:
     df.columns = list(INDEX_FUNC_MAP.keys())
     return df
 
-
+ 
 def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
     """
     Calculate the Equity Index based on weighted combinations of individual indexes.

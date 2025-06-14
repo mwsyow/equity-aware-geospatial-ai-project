@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+### !/usr/bin/env python3
 """
 evaluate_and_plot_all_metrics.py
 
@@ -40,10 +40,13 @@ from metrics.hfdr_metric import calculate_hfdr
 from metrics.accessibility_score_metric import accessibility_score
 
 # Add the parent directory to sys.path so Python can find the sibling 'metrics' package
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# current_dir = os.path.dirname(__file__)
+# parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
+# if parent_dir not in sys.path:
+#     sys.path.insert(0, parent_dir)
+src_dir = os.path.abspath(os.path.join(__file__, '..', '..'))
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
 
 # Now you can import functions from modules in the 'metrics' folder
 # For example, if there is a file named 'metrics_utils.py' with a function 'compute_metric', do:
@@ -253,11 +256,11 @@ def main():
 
     # Define the mapping from model names to their Excel file names
     excel_files = {
-        "main": "main.xlsx",
+        "status_quo_model": "status_quo.xlsx",
         "policy_maker_model": "policy_maker_model.xlsx",
-        "deprivation_aware_model": "deprivation_aware_model.xlsx",
+        "main_model": "main.xlsx",
         "demand_based_model": "demand_based_model.xlsx",
-        "status_quo_model": "status_quo_model.xlsx",
+        "deprivation_aware_model": "deprivation_aware_model.xlsx",
         "accessibility_model": "accessibility_based_model.xlsx",
     }
 
@@ -311,6 +314,10 @@ def main():
     ratios_demands_data = {}
     # Create a list of demands in consistent order
     demands_array = np.array([demands[d] for d in districts], dtype=float)
+    
+    models = ["status_quo_model", "policy_maker_model", "main_model",
+              "demand_based_model", "deprivation_aware_model", "accessibility_model"]
+    
     for model in models:
         # Extract per-district ratios in same order
         ratio_dict = results[model].get("CapacityToDemandRatio", {})
