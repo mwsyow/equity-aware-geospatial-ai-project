@@ -31,6 +31,7 @@ from shapely.geometry import Point
 import osmnx as ox
 import pulp
 import cma
+from .utils import get_existing_hospitals_gdf
 
 # Geographic coordinate system configuration
 CRS_NUM = 4326
@@ -247,11 +248,25 @@ class HospitalPlanner:
         Build travel time matrix (district -> candidate) in minutes
         """
         # Build travel time matrix (district -> candidate) in minutes
-        ttm_district_to_candidate = HospitalPlanner.build_ttm(self.G, self.districts_gdf, self.candidates_gdf, 'travel_time')
+        ttm_district_to_candidate = HospitalPlanner.calculate_ttm(self.G, self.districts_gdf, self.candidates_gdf, 'travel_time')
         self.ttm_district_to_candidate = {k: v / 60 for k, v in ttm_district_to_candidate.items()}  # convert seconds to minutes
+    
+    def build_travel_time_matrix_eh2d(self) -> None:
+        """
+        Build travel time matrix (existing hospital -> district) in minutes
+        """
+        hospital_gdf = get_existing_hospitals_gdf()
         
+        # Map existing hospitals to graph nodes
+        hospital_gdf['node'] = ox.nearest_nodes(
+            self.G,
+            hospital_gdf.geometry.x,
+            hospital_gdf.geometry.y
+        )
+        ttm_district_to_existing_hospital = HospitalPlanner.calculate_ttm(self.G, self.districts_gdf, hospital_gdf, 'travel_time')
+        self.ttm_district_to_existing_hospital = {k: v / 60 for k, v in ttm_district_to_existing_hospital.items()}  # convert seconds to minutes
+    
     def init_baseline_model(self, 
-        demand_weight: float = 0.065,
         equity_weight: float = 0.75,
         travel_weight: float = 0.065,
         beds_weight: float = 0.065,
@@ -349,8 +364,8 @@ class HospitalPlanner:
         self.y = y
         self.z = z
         
-    def build_distance_metric_c2eh(self, gdf: gpd.GeoDataFrame) -> None:
-        hospital_gdf = gdf.copy()
+    def build_distance_metric_c2eh(self) -> None:
+        hospital_gdf = get_existing_hospitals_gdf()
         
         # Map existing hospitals to graph nodes
         hospital_gdf['node'] = ox.nearest_nodes(
@@ -400,7 +415,7 @@ class HospitalPlanner:
                     is_existing_hospitals_neighbors[h].append(j)
         # Calculate total supply (existing + new hospital capacity)
         candidates_gdf['total_supply'] = [
-            self.hospital_gdf.iloc[is_existing_hospitals_neighbors[h]]['MaxBeds'].sum() + 1 
+            self.hospital_gdf.iloc[is_existing_hospitals_neighbors[h]]['bed_allocation'].sum() + 1 
             for h in candidates_gdf.index
         ]
         
@@ -417,7 +432,7 @@ class HospitalPlanner:
         
         # Add proximity constraints: prevent placement near existing hospitals
         for p in self.P:
-            if len(self.is_existing_hospitals_neighbors[p]) >= num_neighbors:
+            if len(is_existing_hospitals_neighbors[p]) >= num_neighbors:
                 self.model += self.x[p] == 0, f"Close_if_has_more_than_{num_neighbors}_existing_hospitals_neighbors_{p}"
     
     def build_distance_metric_c2c(self) -> None:
@@ -496,30 +511,138 @@ class HospitalPlanner:
         beds = {p: self.z[p].value() for p in self.P}
         
         return selected, assigns, beds
+
+    def build_matrix(self):
+        self.build_travel_time_matrix_d2c()
+        self.build_travel_time_matrix_eh2d()
+        self.build_distance_metric_c2eh()
+        self.build_distance_metric_c2c()
     
-    def compute_loss(self):
+    def compute_loss(self, 
+        selected_candidates: gpd.GeoDataFrame, 
+        hospital_gdf: gpd.GeoDataFrame,
+        ) -> dict[str, float]:
         """
-        TODO: Implement loss function
-        """        
+        Compute loss function for each district
+        """
+        loss = {}
+        district_codes = self.districts_gdf['district_code'].unique().tolist()
+        for district_code in district_codes:
+            centroids = self.districts_gdf[self.districts_gdf['district_code'] == district_code]['centroid']
+            candidates = selected_candidates[selected_candidates['district_code'] == district_code]
+            hospitals = hospital_gdf[hospital_gdf['district_code'] == district_code]
+            temp_cent = []
+            if len(candidates) > 0 or len(hospitals) > 0:
+                for centroid in centroids.index:
+                    temp = []
+                    for candidate in candidates.index:
+                        travel_time = self.ttm_district_to_candidate[(centroid, candidate)]
+                        temp.append(travel_time if travel_time < float('inf') else 0)
+                    for hospital in hospitals.index:
+                        travel_time = self.ttm_district_to_existing_hospital[(centroid, hospital)]
+                        temp.append(travel_time if travel_time < float('inf') else 0)
+                    if len(temp) > 0:
+                        temp_cent.append(sum(temp) / len(temp))
+                loss[district_code] = sum(temp_cent) / len(temp_cent) if len(temp_cent) > 0 else 0
+        return sum(list(loss.values())) / len(loss)
     
-    def evaluate(self, weights: list[float]):
+        
+    def predict_location(self, 
+        weights: dict[str, float],
+        time_threshold: int = 30,
+        max_beds_per_hospital: int = 300,
+        min_beds_per_hospital: int = 20,
+        max_beds: int = 1500,
+        num_neighbors: int = 0,
+        eh_distance_threshold: int = 7_000,
+        c2c_distance_threshold: int = 7_000,
+        k: int = 10,
+    ):
         """
         TODO: Implement evaluation
         """
+        self.init_baseline_model(
+            equity_weight=weights['equity_weight'],
+            travel_weight=weights['travel_weight'],
+            beds_weight=weights['beds_weight'],
+            time_threshold=time_threshold,
+            max_beds_per_hospital=max_beds_per_hospital,
+            min_beds_per_hospital=min_beds_per_hospital,
+            max_beds=max_beds,
+        )
+        self.add_existing_hospitals_constraints(
+            supply_weight=weights['supply_weight'],
+            num_neighbors=num_neighbors,
+            distance_threshold=eh_distance_threshold,
+        )
+        self.add_neighbor_constraints(
+            distance_threshold=c2c_distance_threshold,
+        )
+        self.set_num_predictions(k)
+        selected, assigns, beds = self.predict_hospital_locations()
+        selected_candidates = self.candidates_gdf.iloc[selected]
+        selected_candidates['bed_allocation'] = selected_candidates.index.map(lambda id: beds[id])
+        selected_candidates = selected_candidates.assign(
+            Lat=selected_candidates.geometry.y,
+            Lon=selected_candidates.geometry.x
+        )
+        hospital_gdf = self.hospital_gdf.copy()
+        hospital_gdf['type'] = 'existing'
+        selected_candidates['type'] = 'predicted'
+
+        return selected_candidates, hospital_gdf
     
-    def predict(self, weights: list[float], step_size: float):
+    def run(self, 
+        initial_weights: dict[str, float], 
+        step_size: float,
+        num_neighbors: int = 0,
+        eh_distance_threshold: int = 7_000,
+        c2c_distance_threshold: int = 7_000,
+        time_threshold: int = 30,
+        max_beds_per_hospital: int = 300,
+        min_beds_per_hospital: int = 20,
+        max_beds: int = 1500,
+        k: int = 10,
+    ):
         """
         TODO: Implement prediction
         """
+        weights = list(initial_weights.values())
+        losses = []
         es = cma.CMAEvolutionStrategy(x0=weights, sigma0=step_size)
         while not es.stop():
             # generate λ candidate weight-vectors
             solutions = es.ask()
             # evaluate in parallel however you like
-            losses = [self.evaluate(x) for x in solutions]
+            for solution in solutions:
+                weights = dict(zip(initial_weights.keys(), solution))
+                selected_candidates, hospital_gdf = self.predict_location(weights,
+                    num_neighbors=num_neighbors,
+                    eh_distance_threshold=eh_distance_threshold,
+                    c2c_distance_threshold=c2c_distance_threshold,
+                    time_threshold=time_threshold,
+                    max_beds_per_hospital=max_beds_per_hospital,
+                    min_beds_per_hospital=min_beds_per_hospital,
+                    max_beds=max_beds,
+                    k=k,
+                )
+                loss = self.compute_loss(selected_candidates, hospital_gdf)
+                losses.append(loss)
             # feed back to CMA-ES
             es.tell(solutions, losses)
             es.disp()     # optional progress print
 
         # final best
-        best = es.best.get()[0]
+        optimal_weight = es.best.get()[0]
+        weights = dict(zip(initial_weights.keys(), optimal_weight))
+        selected_candidates, hospital_gdf = self.predict_location(weights,
+            num_neighbors=num_neighbors,
+            eh_distance_threshold=eh_distance_threshold,
+            c2c_distance_threshold=c2c_distance_threshold,
+            time_threshold=time_threshold,
+            max_beds_per_hospital=max_beds_per_hospital,
+            min_beds_per_hospital=min_beds_per_hospital,
+            max_beds=max_beds,
+            k=k,
+        )
+        return selected_candidates
