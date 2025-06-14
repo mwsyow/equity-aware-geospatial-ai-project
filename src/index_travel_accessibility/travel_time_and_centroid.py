@@ -36,7 +36,7 @@ def get_centroids():
     # Map AGS codes
     nuts_saarland["AGS"] = nuts_saarland["NUTS_NAME"].map(DISTRICT_TO_AGS)
 
-    # Compute centroids
+   # Compute centroids
     nuts_saarland["centroid"] = nuts_saarland.geometry.centroid
 
     # Construct the centroid dictionary

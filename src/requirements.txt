@@ -12,3 +12,7 @@ scikit-learn==1.6.1
 openpyxl==3.1.5
 shapely==2.0.4
 statsmodels==0.14.4
+osmnx==2.0.3
+networkx==3.5
+pulp==3.2.1
+cma==4.2.0
