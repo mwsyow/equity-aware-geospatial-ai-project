@@ -42,13 +42,14 @@ def assemble_indexes() -> pd.DataFrame:
     Assembles all individual indexes into a combined DataFrame.
     
     The function iterates through the INDEX_FUNC_MAP, calls each index calculation function,
-    and combines the results into a single DataFrame.
+    and combines the results into a single DataFrame. Each index function returns either a
+    dictionary of values or a DataFrame, which are then combined.
     
     Returns:
         pd.DataFrame: Combined DataFrame where:
-            - Rows are districts
-            - Columns are different indexes (forecast_demand, elderly_share, etc.)
-            - Values are the calculated index values for each district
+            - Index: District identifiers (AGS codes)
+            - Columns: Different indexes (forecast_demand, elderly_share, gisd, etc.)
+            - Values: The calculated index values for each district
     """
     combinded_df = []
     for index in INDEX_FUNC_MAP.values():
@@ -70,14 +71,20 @@ def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
     EquityIndex = w1*DemandForecast + w2*GISD + w3*TravelTime + w4*Accessibility
     where Accessibility = w5*ElderlyShare + w6*HospitalCapacity
     
-    Higher values indicate worse equity conditions.
+    Higher values indicate worse equity conditions (i.e., higher values mean greater inequity).
     
     Args:
         index_df (pd.DataFrame): DataFrame containing the index values for each district
+            - Index: District identifiers
+            - Columns: Individual index values (forecast_demand, elderly_share, etc.)
         weights (dict): Dictionary mapping Index enum values to their respective weights
+            Must contain weights for all required indexes: FORECAST_DEMAND, ELDERLY_SHARE,
+            GISD, HOSPITAL_CAPACITY, TRAVEL_TIME, and ACCESSIBILITY
     
     Returns:
         pd.Series: Equity Index values for each district
+            - Index: District identifiers
+            - Values: Calculated equity index values (higher values indicate worse equity)
     """
     equity = []
     for district, index in index_df.iterrows():
@@ -101,15 +108,15 @@ def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
 
 def centroid() -> pd.Series:
     """
-    Calculate the centroid coordinates for each district.
+    Calculate the centroid coordinates for each district in Saarland.
     
     Retrieves district centroids from the travel time and centroid module
-    and converts them to Shapely Point objects.
+    and converts them to Shapely Point objects with longitude and latitude coordinates.
     
     Returns:
         pd.Series: District centroids where:
-            - Index: AGS_CODE (district identifier)
-            - Values: Shapely Point objects containing (longitude, latitude)
+            - Index: AGS_CODE (district identifier as string)
+            - Values: Shapely Point objects containing (longitude, latitude) coordinates
     """
     centroids = get_centroids()
     centroid_series = pd.Series({k: Point(v["lon"], v["lat"]) for k, v in centroids.items()})
@@ -117,15 +124,18 @@ def centroid() -> pd.Series:
 
 def current_hospital_demand() -> pd.Series:
     """
-    Calculate current hospital demand based on historical inpatient data.
+    Calculate current hospital demand based on historical inpatient data for Saarland.
     
     Processes hospital inpatient data and disease history to calculate
-    the current demand distribution across districts.
+    the current demand distribution across districts. The calculation:
+    1. Gets total hospital inpatients for Saarland in the cutoff year
+    2. Normalizes disease history data for the cutoff year
+    3. Distributes total inpatients across districts based on disease history
     
     Returns:
         pd.Series: Current hospital demand where:
-            - Index: District identifiers as strings
-            - Values: Calculated demand values for each district
+            - Index: District identifiers as strings (AGS codes)
+            - Values: Calculated demand values (number of inpatients) for each district
     """
     dfhi = df_hospital_inpatients()
     curr_saarland_hospital_inpatients = dfhi[(dfhi[YEAR]==CUT_OFF_YEAR) & (dfhi[REGION_CODE]==10)][VALUE].values[0]
@@ -135,7 +145,29 @@ def current_hospital_demand() -> pd.Series:
     curr_demand.index = [str(i) for i in curr_demand.index]
     return curr_demand
 
-def get_district_gdf(equity_df: pd.DataFrame) -> gpd.GeoDataFrame:# Load the Excel file
+def get_district_gdf(equity_df: pd.DataFrame) -> gpd.GeoDataFrame:
+    """
+    Create a GeoDataFrame containing district information and geometries.
+    
+    Combines district sample points data with demand, equity index, and centroid
+    information to create a comprehensive GeoDataFrame for spatial analysis.
+    
+    Args:
+        equity_df (pd.DataFrame): DataFrame containing equity index values
+            - Index: District identifiers
+            - Values: Equity index values
+    
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame containing:
+            - district_code: District identifier
+            - longitude: Longitude coordinate
+            - latitude: Latitude coordinate
+            - demand: Current hospital demand
+            - equity_index: Equity index value
+            - centroid: Shapely Point geometry
+            - CRS: Coordinate Reference System (CRS)
+    """
+    # Load the Excel file
     file_path = os.path.join(os.path.dirname(__file__), "index_travel_accessibility", "data", "processed", "saarland_districts_sample_points.xlsx")
     df_sample_points = pd.read_excel(file_path)
     SAARLAND_DISTRICT_MAPPING = {
@@ -172,6 +204,35 @@ def get_district_gdf(equity_df: pd.DataFrame) -> gpd.GeoDataFrame:# Load the Exc
     return districts_gdf
 
 def main():
+    """
+    Main function that orchestrates the hospital planning process for Saarland.
+    
+    This function:
+    1. Calculates various equity and demand indexes
+    2. Creates a spatial representation of districts
+    3. Generates candidate hospital locations
+    4. Runs the hospital planning algorithm with specified parameters
+    5. Visualizes the results on a map
+    
+    The planning process uses the following key parameters:
+    - n_samples_per_centroid: Number of candidate locations per district centroid
+    - radius_km: Search radius for candidate locations
+    - initial_weights: Weights for different factors in hospital placement:
+        * equity_weight: Weight for equity considerations (0.75)
+        * travel_weight: Weight for travel time (0.065)
+        * beds_weight: Weight for bed capacity (0.065)
+        * supply_weight: Weight for supply considerations (0.065)
+    - eh_distance_threshold: Maximum distance between existing and new hospitals (7000m)
+    - c2c_distance_threshold: Maximum distance between candidate hospitals (7000m)
+    - time_threshold: Maximum travel time in minutes (30)
+    - max_beds_per_hospital: Maximum beds per hospital (300)
+    - min_beds_per_hospital: Minimum beds per hospital (20)
+    - max_beds: Maximum total beds across all hospitals (1500)
+    - k: Number of hospitals to select (2)
+    
+    The results are saved as an interactive HTML map showing both existing
+    and predicted hospital locations.
+    """
     index_df = assemble_indexes()
     # Set the weights for the indexes
     weight = {

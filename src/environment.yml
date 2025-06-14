@@ -35,3 +35,4 @@ dependencies:
   - pip:
     # P-Median optimization
     - pulp
+    - cma
