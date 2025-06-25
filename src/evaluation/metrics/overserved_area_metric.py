@@ -1,7 +1,7 @@
 from statistics import mean, stdev
 import pandas as pd
 
-from metrics.hdr_metric import calculate_hdr  # Must return a dict or Series with district codes as keys
+from .hdr_metric import calculate_hdr  # Must return a dict or Series with district codes as keys
 
 SAARLAND_AGS = {
     "Regionalverband Saarbrücken": "10041",

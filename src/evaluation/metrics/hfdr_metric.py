@@ -8,7 +8,7 @@ from index_demand_forecast.demand_forecast import (
     
 )
 import pandas as pd
-from enum import StrEnum
+from strenum import StrEnum
 
 CUT_OFF_YEAR = 2021
 YEAR = 'time'

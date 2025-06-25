@@ -33,11 +33,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os
-from metrics.equity_index_metric import calculate_new_equity_index
-from metrics.hdr_metric import calculate_hdr
-from metrics.overserved_area_metric import compute_overserved_area_count
-from metrics.hfdr_metric import calculate_hfdr
-from metrics.accessibility_score_metric import accessibility_score
+from .metrics.equity_index_metric import calculate_new_equity_index
+from .metrics.hdr_metric import calculate_hdr
+from .metrics.hdr_metric import calculate_hdr
+from .metrics.overserved_area_metric import compute_overserved_area_count
+from .metrics.hfdr_metric import calculate_hfdr
+from .metrics.accessibility_score_metric import accessibility_score
 
 # Add the parent directory to sys.path so Python can find the sibling 'metrics' package
 # current_dir = os.path.dirname(__file__)

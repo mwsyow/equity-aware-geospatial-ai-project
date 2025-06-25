@@ -74,13 +74,17 @@ def get_TAI_scaled_for_model(model_name: str) -> pd.DataFrame:
         pd.DataFrame: DataFrame with 'district_code' and model-specific travel time scaled values.
     """
 
+    BASE_DIR = os.path.abspath(            # e.g. /Users/you/.../src/evaluation/metrics
+    os.path.join(os.path.dirname(__file__), '..', 'data', 'processed'))
+
+
     MODEL_PATHS = {
-        "status_quo_model": "src\\evaluation\\data\\processed\\RES_status_quo_model.xlsx",
-        "policy_maker_model": "src\\evaluation\\data\\processed\\RES_policy_maker_model.xlsx",
-        "demand_based_model": "src\\evaluation\\data\\processed\\RES_demand_based_model.xlsx",
-        "deprivation_aware_model": "src\\evaluation\\data\\processed\\RES_deprivation_aware_model.xlsx",
-        "accessibility_based_model": "src\\evaluation\\data\\processed\\RES_accessibility_based_model.xlsx",
-        "main_model": "src\\evaluation\\data\\processed\\RES_main_model.xlsx",
+        "status_quo_model": os.path.join(BASE_DIR, "RES_status_quo_model.xlsx"),
+        "policy_maker_model": os.path.join(BASE_DIR, "RES_policy_maker_model.xlsx"),
+        "demand_based_model": os.path.join(BASE_DIR, "RES_demand_based_model.xlsx"),
+        "deprivation_aware_model": os.path.join(BASE_DIR, "RES_deprivation_aware_model.xlsx"),
+        "accessibility_based_model": os.path.join(BASE_DIR, "RES_accessibility_based_model.xlsx"),
+        "main_model": os.path.join(BASE_DIR, "RES_main_model.xlsx"),
     }
 
     if model_name not in MODEL_PATHS:

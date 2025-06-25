@@ -2,10 +2,10 @@ from index_demand_forecast.demand_forecast import forecast_demand_per_district_i
 from index_elderly_share.elderly_share import run as run_elderly_share
 from index_gisd.gisd import run as run_gisd
 from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
-from metrics.accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scaled_for_model
+from .accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scaled_for_model
 import os
 import pandas as pd
-from enum import StrEnum
+from strenum import StrEnum
 import numpy as np
 
 
@@ -91,31 +91,40 @@ def calculate_new_hospital_capacity_index(hospital_file_path: str) -> dict:
 
 
 def assemble_indexes() -> pd.DataFrame:
-    """
-    Assembles all individual indexes into a combined DataFrame.
-    
-    The function iterates through the INDEX_FUNC_MAP, calls each index calculation function,
-    and combines the results into a single DataFrame.
-    
-    Returns:
-        pd.DataFrame: Combined DataFrame where:
-            - Rows are districts
-            - Columns are different indexes (forecast_demand, elderly_share, etc.)
-            - Values are the calculated index values for each district
-    """
-    
-    combinded_df = []
-    for index in INDEX_FUNC_MAP.values():
-        res = index()
-        # If res is a dict of scalars, wrap values in a list
-        if isinstance(res, dict) and all(not isinstance(v, (list, pd.Series, np.ndarray, pd.DataFrame)) for v in res.values()):
-            res = {k: [v] for k, v in res.items()}
-        combinded_df.append(pd.DataFrame(res))
-    df = pd.concat(combinded_df)
-    df = df.transpose()
+    combined = []
+    # Iterate with both key (Index enum) and function
+    for name, fn in INDEX_FUNC_MAP.items():
+        # 1) sanity check: fn must be callable
+        if not callable(fn):
+            raise TypeError(f"INDEX_FUNC_MAP[{name!r}] is not callable (got {type(fn)})")
+
+        # 2) optional logging - shows you exactly what's running
+        print(f"→ computing index {name!r} using {fn.__name__}")
+
+        # 3) actually call it
+        res = fn()
+
+        # 4) wrap scalars-in-dict into lists so DataFrame(res) works
+        if isinstance(res, dict):
+            if all(not isinstance(v, (list, pd.Series, np.ndarray, pd.DataFrame))
+                   for v in res.values()):
+                res = {k: [v] for k, v in res.items()}
+            df_i = pd.DataFrame(res)
+
+        # 5) if it already returned a DataFrame, accept as-is
+        elif isinstance(res, pd.DataFrame):
+            df_i = res
+
+        else:
+            # 6) blow up on anything else
+            raise TypeError(f"Index function {name!r} returned unsupported type {type(res)}")
+
+        combined.append(df_i)
+
+    # 7) concatenate, transpose, and set column names
+    df = pd.concat(combined, axis=0).transpose()
     df.columns = list(INDEX_FUNC_MAP.keys())
     return df
-
  
 def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
     """
@@ -246,7 +255,7 @@ def calculate_new_equity_index(hospital_file_path: str, modelname: str):
     """
 
     INDEX_FUNC_MAP[Index.HOSPITAL_CAPACITY] = lambda: calculate_new_hospital_capacity_index(hospital_file_path)
-    INDEX_FUNC_MAP[Index.TRAVEL_TIME] = run_TAI_scaled_for_model(modelname)
+    INDEX_FUNC_MAP[Index.TRAVEL_TIME] = lambda: run_TAI_scaled_for_model(modelname)
 
     index_df = assemble_indexes()
     weight = {
@@ -259,8 +268,3 @@ def calculate_new_equity_index(hospital_file_path: str, modelname: str):
     }
 
     return equity_index(index_df, weight)
-
-    
-
-
-
