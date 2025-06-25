@@ -123,12 +123,12 @@ def accessibility_score():
     """
 
     MODEL_PATHS = {
-        "status_quo_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_status_quo_model_travel_time_from_sample_to_hospital.xlsx",
-        "policy_maker_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_policy_maker_model_travel_time_from_sample_to_hospital.xlsx",
-        "demand_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_demand_based_model_travel_time_from_sample_to_hospital.xlsx",
-        "deprivation_aware_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_deprivation_aware_model_travel_time_from_sample_to_hospital.xlsx",
-        "accessibility_based_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_accessibility_based_model_travel_time_from_sample_to_hospital.xlsx",
-        "main_model": "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\RES_main_model_travel_time_from_sample_to_hospital.xlsx",
+        "status_quo_model": "evaluation/data/processed/RES_status_quo_model_travel_time_from_sample_to_hospital.xlsx",
+        "policy_maker_model": "evaluation/data/processed/RES_policy_maker_model_travel_time_from_sample_to_hospital.xlsx",
+        "demand_based_model": "evaluation/data/processed/RES_demand_based_model_travel_time_from_sample_to_hospital.xlsx",
+        "deprivation_aware_model": "evaluation/data/processed/RES_deprivation_aware_model_travel_time_from_sample_to_hospital.xlsx",
+        "accessibility_based_model": "evaluation/data/processed/RES_accessibility_based_model_travel_time_from_sample_to_hospital.xlsx",
+        "main_model": "evaluation/data/processed/RES_main_model_travel_time_from_sample_to_hospital.xlsx",
     }
 
     results = []
@@ -149,7 +149,7 @@ def accessibility_score():
     results_df = pd.DataFrame(results).round(2)
     
     # Save to Excel
-    output_path = "equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\accessibility_score.xlsx"
+    output_path = "evaluation/data/processed/accessibility_score.xlsx"
     results_df.to_excel(output_path, index=False)
 
     print("✅ Saved accessibility score (mean, median, p95) to:")

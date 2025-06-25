@@ -35,6 +35,8 @@ INDEX_FUNC_MAP = {
     Index.FORECAST_DEMAND: run_demand_forecast,
     Index.ELDERLY_SHARE: run_elderly_share,
     Index.GISD: run_gisd,
+    Index.HOSPITAL_CAPACITY: run_hospital_capacity_index,
+    Index.TRAVEL_TIME: lambda: run_TAI_scaled_for_model("status_quo_model"),  # Default model
     }
 
 
@@ -111,9 +113,19 @@ def assemble_indexes() -> pd.DataFrame:
                 res = {k: [v] for k, v in res.items()}
             df_i = pd.DataFrame(res)
 
-        # 5) if it already returned a DataFrame, accept as-is
+        # 5) if it already returned a DataFrame, extract the relevant column
         elif isinstance(res, pd.DataFrame):
-            df_i = res
+            # For DataFrames, we need to extract the relevant column
+            # The TAI function returns a DataFrame with 'district_code' and model name columns
+            res_df = res  # Type hint for the linter
+            if 'district_code' in res_df.columns:
+                # Extract the model-specific column (should be the second column)
+                model_col = [col for col in res_df.columns if col != 'district_code'][0]
+                # Create a DataFrame with districts as columns (like the dict results)
+                df_i = res_df.set_index('district_code')[model_col].to_frame().T
+            else:
+                # If it's a single-column DataFrame, use it as is
+                df_i = res_df
 
         else:
             # 6) blow up on anything else
@@ -180,27 +192,27 @@ def load_hospital_data(hospital_file_path: str) -> pd.DataFrame:
             - district (float): District/Kreis code
             - beds (int): Number of hospital beds
     """
-    xl = pd.ExcelFile(hospital_file_path, engine="openpyxl")
-    #sheet_df = xl.parse("KHV_2021", header=None)
-
-
-    # Re-read with correct header
-    df = pd.read_excel(hospital_file_path, engine="openpyxl")
+    # Read the correct sheet with proper header
+    df = pd.read_excel(hospital_file_path, sheet_name='KHV_2021', header=4, engine="openpyxl")
     df.columns = df.columns.str.strip()
 
-
-    # Adapt to new Excel format
     # Rename columns for consistency
-    # Rename columns based on the new Excel format
     df = df.rename(columns={
-        "district_code": "district",
-        "bed_allocation": "beds"
+        "Land": "region",
+        "Kreis": "district", 
+        "INSG": "beds"
     })
 
+    # Convert beds to numeric, handling any non-numeric values
+    df["beds"] = pd.to_numeric(df["beds"], errors='coerce')
 
     # Clean the data by dropping rows with missing or zero beds
     df = df.dropna(subset=["beds"])
     df = df[df["beds"] > 0]
+
+    # Filter for Saarland (region code 10) and convert district codes to match inpatient data
+    df = df[df["region"] == 10].copy()
+    df["district"] = 10000 + df["district"].astype(int)
 
     return df
 
@@ -240,21 +252,23 @@ def load_population_data() -> pd.DataFrame:
 
 
 def calculate_new_equity_index(hospital_file_path: str, modelname: str):
-
-
     """
     Runs the equity index calculation pipeline with a custom hospital data file.
 
     Args:
         hospital_file_path (str): Path to the hospital capacity Excel file.
-        population_data (pd.DataFrame): DataFrame with columns ['district', 'population'].
+        modelname (str): Name of the model to use for travel time calculations.
         weights (dict): Dictionary mapping Index enum values to their respective weights.
 
     Returns:
         pd.Series: Equity Index values for each district.
     """
 
-    INDEX_FUNC_MAP[Index.HOSPITAL_CAPACITY] = lambda: calculate_new_hospital_capacity_index(hospital_file_path)
+    # Define the path to the hospital data file (not the model results file)
+    hospital_data_path = os.path.join(os.path.dirname(__file__), "..", "..", "index_hospital_capacity", "data", "Krankenhausverzeichnis_2021.xlsx")
+
+    # Override the INDEX_FUNC_MAP entries with the custom functions
+    INDEX_FUNC_MAP[Index.HOSPITAL_CAPACITY] = lambda: calculate_new_hospital_capacity_index(hospital_data_path)
     INDEX_FUNC_MAP[Index.TRAVEL_TIME] = lambda: run_TAI_scaled_for_model(modelname)
 
     index_df = assemble_indexes()

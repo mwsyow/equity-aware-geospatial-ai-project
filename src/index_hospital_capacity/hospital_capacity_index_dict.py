@@ -30,23 +30,28 @@ def load_hospital_data() -> pd.DataFrame:
             - beds (int): Number of hospital beds
     """
     file_path = os.path.join(DATA_PATH, "Krankenhausverzeichnis_2021.xlsx")
-    xl = pd.ExcelFile(file_path, engine="openpyxl")
-    sheet_df = xl.parse("KHV_2021", header=None)
-
-    # Detect first non-empty row as header
-    for i, row in sheet_df.iterrows():
-        if row.notna().sum() > 3:  # assuming at least 4 non-empty values in the header row
-            header_row = i
-            break
-
-    # Re-read with correct header
-    df = pd.read_excel(file_path, sheet_name="KHV_2021", skiprows=header_row, engine="openpyxl")
+    
+    # Read the correct sheet with proper header
+    df = pd.read_excel(file_path, sheet_name='KHV_2021', header=4, engine="openpyxl")
     df.columns = df.columns.str.strip()
 
-    df = df[df["Land"] == REGION_CODE]
-    df = df[["Land", "Kreis", "INSG"]].rename(columns={"Land": "region", "Kreis": "district", "INSG": "beds"})
+    # Rename columns for consistency
+    df = df.rename(columns={
+        "Land": "region",
+        "Kreis": "district", 
+        "INSG": "beds"
+    })
+
+    # Convert beds to numeric, handling any non-numeric values
+    df["beds"] = pd.to_numeric(df["beds"], errors='coerce')
+
+    # Clean the data by dropping rows with missing or zero beds
     df = df.dropna(subset=["beds"])
     df = df[df["beds"] > 0]
+
+    # Filter for Saarland (region code 10) and convert district codes to match inpatient data
+    df = df[df["region"] == 10].copy()
+    df["district"] = 10000 + df["district"].astype(int)
 
     return df
 

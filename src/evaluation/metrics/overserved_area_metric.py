@@ -23,7 +23,7 @@ def compute_overserved_area_count(hospital_file_path: str) -> pd.Series:
         pd.Series: Series with district names as index and values 1 (overserved) or 0.
     """
     hdr_values = calculate_hdr(hospital_file_path)  # Should return dict or Series {district_code: HDR}
-    if not hdr_values:
+    if hdr_values.empty:
         return pd.Series(dtype=int)
 
     # Ensure we have only Saarland district HDRs and cast to float
