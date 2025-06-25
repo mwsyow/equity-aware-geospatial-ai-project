@@ -649,12 +649,12 @@ class HospitalPlanner:
             gpd.GeoDataFrame: Selected candidate locations with optimal bed allocations
         """
         weights = list(initial_weights.values())
-        losses = []
         es = cma.CMAEvolutionStrategy(x0=weights, sigma0=step_size)
         while not es.stop():
             # generate λ candidate weight-vectors
             solutions = es.ask()
             # evaluate in parallel however you like
+            losses = []  # Reset losses for each generation
             for solution in solutions:
                 weights = dict(zip(initial_weights.keys(), solution))
                 selected_candidates, hospital_gdf = self.predict_location(weights,
