@@ -36,3 +36,5 @@ dependencies:
     # P-Median optimization
     - pulp
     - cma
+
+  - streamlit

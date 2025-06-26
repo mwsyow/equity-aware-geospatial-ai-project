@@ -27,27 +27,27 @@ def load_hospital_data(hospital_file_path: str) -> pd.DataFrame:
             - district (float): District/Kreis code
             - beds (int): Number of hospital beds
     """
-    # Read the correct sheet with proper header
-    df = pd.read_excel(hospital_file_path, sheet_name='KHV_2021', header=4, engine="openpyxl")
+    xl = pd.ExcelFile(hospital_file_path, engine="openpyxl")
+    #sheet_df = xl.parse("KHV_2021", header=None)
+
+
+    # Re-read with correct header
+    df = pd.read_excel(hospital_file_path, engine="openpyxl")
     df.columns = df.columns.str.strip()
 
+
+    # Adapt to new Excel format
     # Rename columns for consistency
+    # Rename columns based on the new Excel format
     df = df.rename(columns={
-        "Land": "region",
-        "Kreis": "district", 
-        "INSG": "beds"
+        "district_code": "district",
+        "bed_allocation": "beds"
     })
 
-    # Convert beds to numeric, handling any non-numeric values
-    df["beds"] = pd.to_numeric(df["beds"], errors='coerce')
 
     # Clean the data by dropping rows with missing or zero beds
     df = df.dropna(subset=["beds"])
     df = df[df["beds"] > 0]
-
-    # Filter for Saarland (region code 10) and convert district codes to match inpatient data
-    df = df[df["region"] == 10].copy()
-    df["district"] = 10000 + df["district"].astype(int)
 
     return df
 
@@ -70,9 +70,8 @@ def load_hospital_inpatient_data() -> pd.DataFrame:
     """
     
     hospital_inpatient_df = loading_hospital_inpatients_per_district()
-    # Use 2021 as the year column (since columns are integers)
-    hospital_inpatient_df_2021 = hospital_inpatient_df[2021]
-    return hospital_inpatient_df_2021.reset_index().rename(columns={"district_code": "district", 2021: "value"})
+    hospital_inpatient_df_2021 = hospital_inpatient_df["2020/21"]
+    return hospital_inpatient_df_2021.reset_index().rename(columns={"district_code": "district", "2020/21": "value"})
 
 
 
