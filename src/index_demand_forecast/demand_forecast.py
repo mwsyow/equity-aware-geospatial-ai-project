@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from statsmodels.tsa.arima.model import ARIMA
-from enum import StrEnum
+from strenum import StrEnum
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 

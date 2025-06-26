@@ -1,7 +1,7 @@
 from statistics import mean, stdev
 import pandas as pd
 
-from .hdr_metric import hdr_metric  # Must return a dict or Series with district codes as keys
+from .hdr_metric import calculate_hdr  # Must return a dict or Series with district codes as keys
 
 SAARLAND_AGS = {
     "Regionalverband Saarbrücken": "10041",
@@ -22,8 +22,8 @@ def compute_overserved_area_count(hospital_file_path: str) -> pd.Series:
     Returns:
         pd.Series: Series with district names as index and values 1 (overserved) or 0.
     """
-    hdr_values = hdr_metric(hospital_file_path)  # Should return dict or Series {district_code: HDR}
-    if not hdr_values:
+    hdr_values = calculate_hdr(hospital_file_path)  # Should return dict or Series {district_code: HDR}
+    if hdr_values.empty:
         return pd.Series(dtype=int)
 
     # Ensure we have only Saarland district HDRs and cast to float

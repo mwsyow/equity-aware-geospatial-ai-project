@@ -8,7 +8,7 @@ from index_demand_forecast.demand_forecast import (
     
 )
 import pandas as pd
-from enum import StrEnum
+from strenum import StrEnum
 
 CUT_OFF_YEAR = 2021
 YEAR = 'time'
@@ -87,23 +87,27 @@ def load_hospital_data(hospital_file_path: str) -> pd.DataFrame:
             - district (float): District/Kreis code
             - beds (int): Number of hospital beds
     """
-    # Re-read with correct header
-    df = pd.read_excel(hospital_file_path, engine="openpyxl")
+    # Read the correct sheet with proper header
+    df = pd.read_excel(hospital_file_path, sheet_name='KHV_2021', header=4, engine="openpyxl")
     df.columns = df.columns.str.strip()
 
-
-    # Adapt to new Excel format
     # Rename columns for consistency
-    # Rename columns based on the new Excel format
     df = df.rename(columns={
-        "district_code": "district",
-        "bed_allocation": "beds"
+        "Land": "region",
+        "Kreis": "district", 
+        "INSG": "beds"
     })
 
+    # Convert beds to numeric, handling any non-numeric values
+    df["beds"] = pd.to_numeric(df["beds"], errors='coerce')
 
     # Clean the data by dropping rows with missing or zero beds
     df = df.dropna(subset=["beds"])
     df = df[df["beds"] > 0]
+
+    # Filter for Saarland (region code 10) and convert district codes to match inpatient data
+    df = df[df["region"] == 10].copy()
+    df["district"] = 10000 + df["district"].astype(int)
 
     return df
 

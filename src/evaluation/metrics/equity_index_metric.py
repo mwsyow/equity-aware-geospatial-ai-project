@@ -2,9 +2,13 @@ from index_demand_forecast.demand_forecast import forecast_demand_per_district_i
 from index_elderly_share.elderly_share import run as run_elderly_share
 from index_gisd.gisd import run as run_gisd
 from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
-from accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scaled_for_model
+from .accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scaled_for_model
 import os
 import pandas as pd
+from strenum import StrEnum
+import numpy as np
+
+
 
 SAARLAND_AGS = [
     "10041",  # Regionalverband Saarbrücken
@@ -31,6 +35,8 @@ INDEX_FUNC_MAP = {
     Index.FORECAST_DEMAND: run_demand_forecast,
     Index.ELDERLY_SHARE: run_elderly_share,
     Index.GISD: run_gisd,
+    Index.HOSPITAL_CAPACITY: run_hospital_capacity_index,
+    Index.TRAVEL_TIME: lambda: run_TAI_scaled_for_model("status_quo_model"),  # Default model
     }
 
 
@@ -87,32 +93,51 @@ def calculate_new_hospital_capacity_index(hospital_file_path: str) -> dict:
 
 
 def assemble_indexes() -> pd.DataFrame:
-    """
-    Assembles all individual indexes into a combined DataFrame.
-    
-    The function iterates through the INDEX_FUNC_MAP, calls each index calculation function,
-    and combines the results into a single DataFrame.
-    
-    Returns:
-        pd.DataFrame: Combined DataFrame where:
-            - Rows are districts
-            - Columns are different indexes (forecast_demand, elderly_share, etc.)
-            - Values are the calculated index values for each district
-    """
-    
-    combinded_df = []
-    for index in INDEX_FUNC_MAP.values():
-        res = index()
-        # If res is a dict of scalars, wrap values in a list
-        if isinstance(res, dict) and all(not isinstance(v, (list, pd.Series, np.ndarray, pd.DataFrame)) for v in res.values()):
-            res = {k: [v] for k, v in res.items()}
-        combinded_df.append(pd.DataFrame(res))
-    df = pd.concat(combinded_df)
-    df = df.transpose()
+    combined = []
+    # Iterate with both key (Index enum) and function
+    for name, fn in INDEX_FUNC_MAP.items():
+        # 1) sanity check: fn must be callable
+        if not callable(fn):
+            raise TypeError(f"INDEX_FUNC_MAP[{name!r}] is not callable (got {type(fn)})")
+
+        # 2) optional logging - shows you exactly what's running
+        print(f"→ computing index {name!r} using {fn.__name__}")
+
+        # 3) actually call it
+        res = fn()
+
+        # 4) wrap scalars-in-dict into lists so DataFrame(res) works
+        if isinstance(res, dict):
+            if all(not isinstance(v, (list, pd.Series, np.ndarray, pd.DataFrame))
+                   for v in res.values()):
+                res = {k: [v] for k, v in res.items()}
+            df_i = pd.DataFrame(res)
+
+        # 5) if it already returned a DataFrame, extract the relevant column
+        elif isinstance(res, pd.DataFrame):
+            # For DataFrames, we need to extract the relevant column
+            # The TAI function returns a DataFrame with 'district_code' and model name columns
+            res_df = res  # Type hint for the linter
+            if 'district_code' in res_df.columns:
+                # Extract the model-specific column (should be the second column)
+                model_col = [col for col in res_df.columns if col != 'district_code'][0]
+                # Create a DataFrame with districts as columns (like the dict results)
+                df_i = res_df.set_index('district_code')[model_col].to_frame().T
+            else:
+                # If it's a single-column DataFrame, use it as is
+                df_i = res_df
+
+        else:
+            # 6) blow up on anything else
+            raise TypeError(f"Index function {name!r} returned unsupported type {type(res)}")
+
+        combined.append(df_i)
+
+    # 7) concatenate, transpose, and set column names
+    df = pd.concat(combined, axis=0).transpose()
     df.columns = list(INDEX_FUNC_MAP.keys())
     return df
-
-
+ 
 def equity_index(index_df: pd.DataFrame, weights: dict) -> pd.Series:
     """
     Calculate the Equity Index based on weighted combinations of individual indexes.
@@ -167,27 +192,27 @@ def load_hospital_data(hospital_file_path: str) -> pd.DataFrame:
             - district (float): District/Kreis code
             - beds (int): Number of hospital beds
     """
-    xl = pd.ExcelFile(hospital_file_path, engine="openpyxl")
-    #sheet_df = xl.parse("KHV_2021", header=None)
-
-
-    # Re-read with correct header
-    df = pd.read_excel(hospital_file_path, engine="openpyxl")
+    # Read the correct sheet with proper header
+    df = pd.read_excel(hospital_file_path, sheet_name='KHV_2021', header=4, engine="openpyxl")
     df.columns = df.columns.str.strip()
 
-
-    # Adapt to new Excel format
     # Rename columns for consistency
-    # Rename columns based on the new Excel format
     df = df.rename(columns={
-        "district_code": "district",
-        "bed_allocation": "beds"
+        "Land": "region",
+        "Kreis": "district", 
+        "INSG": "beds"
     })
 
+    # Convert beds to numeric, handling any non-numeric values
+    df["beds"] = pd.to_numeric(df["beds"], errors='coerce')
 
     # Clean the data by dropping rows with missing or zero beds
     df = df.dropna(subset=["beds"])
     df = df[df["beds"] > 0]
+
+    # Filter for Saarland (region code 10) and convert district codes to match inpatient data
+    df = df[df["region"] == 10].copy()
+    df["district"] = 10000 + df["district"].astype(int)
 
     return df
 
@@ -227,22 +252,24 @@ def load_population_data() -> pd.DataFrame:
 
 
 def calculate_new_equity_index(hospital_file_path: str, modelname: str):
-
-
     """
     Runs the equity index calculation pipeline with a custom hospital data file.
 
     Args:
         hospital_file_path (str): Path to the hospital capacity Excel file.
-        population_data (pd.DataFrame): DataFrame with columns ['district', 'population'].
+        modelname (str): Name of the model to use for travel time calculations.
         weights (dict): Dictionary mapping Index enum values to their respective weights.
 
     Returns:
         pd.Series: Equity Index values for each district.
     """
 
-    INDEX_FUNC_MAP[Index.HOSPITAL_CAPACITY] = lambda: calculate_new_hospital_capacity_index(hospital_file_path)
-    INDEX_FUNC_MAP[Index.TRAVEL_TIME] = run_TAI_scaled_for_model(modelname)
+    # Define the path to the hospital data file (not the model results file)
+    hospital_data_path = os.path.join(os.path.dirname(__file__), "..", "..", "index_hospital_capacity", "data", "Krankenhausverzeichnis_2021.xlsx")
+
+    # Override the INDEX_FUNC_MAP entries with the custom functions
+    INDEX_FUNC_MAP[Index.HOSPITAL_CAPACITY] = lambda: calculate_new_hospital_capacity_index(hospital_data_path)
+    INDEX_FUNC_MAP[Index.TRAVEL_TIME] = lambda: run_TAI_scaled_for_model(modelname)
 
     index_df = assemble_indexes()
     weight = {
@@ -255,8 +282,3 @@ def calculate_new_equity_index(hospital_file_path: str, modelname: str):
     }
 
     return equity_index(index_df, weight)
-
-    
-
-
-

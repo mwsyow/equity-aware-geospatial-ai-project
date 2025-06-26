@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+### !/usr/bin/env python3
 """
 evaluate_and_plot_all_metrics.py
 
@@ -33,17 +33,21 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os
-from metrics.equity_index_metric import calculate_new_equity_index
-from metrics.hdr_metric import calculate_hdr
-from metrics.overserved_area_metric import compute_overserved_area_count
-from metrics.hfdr_metric import calculate_hfdr
-from metrics.accessibility_score_metric import accessibility_score
+from .metrics.equity_index_metric import calculate_new_equity_index
+from .metrics.hdr_metric import calculate_hdr
+from .metrics.hdr_metric import calculate_hdr
+from .metrics.overserved_area_metric import compute_overserved_area_count
+from .metrics.hfdr_metric import calculate_hfdr
+from .metrics.accessibility_score_metric import accessibility_score
 
 # Add the parent directory to sys.path so Python can find the sibling 'metrics' package
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# current_dir = os.path.dirname(__file__)
+# parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
+# if parent_dir not in sys.path:
+#     sys.path.insert(0, parent_dir)
+src_dir = os.path.abspath(os.path.join(__file__, '..', '..'))
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
 
 # Now you can import functions from modules in the 'metrics' folder
 # For example, if there is a file named 'metrics_utils.py' with a function 'compute_metric', do:
@@ -52,34 +56,63 @@ if parent_dir not in sys.path:
 
 def compute_summary(results_dict, agg_func="mean"):
     """
-    results_dict: dict of model -> dict of metric -> dict of district -> value
-    agg_func: "mean" or "median"
-    Returns: DataFrame summary_df with index=models, columns=metrics, values=aggregated metric.
+    Computes summary statistics across districts for each model and metric.
+    
+    Args:
+        results_dict: Dictionary with model names as keys and dictionaries of metrics as values.
+        agg_func: Aggregation function to use ("mean", "median", "std", etc.)
+    
+    Returns:
+        DataFrame with models as rows and metrics as columns.
     """
-    models = list(results_dict.keys())
-    metric_set = set()
-    for m in models:
-        metric_set.update(results_dict[m].keys())
-    metrics = sorted(metric_set)
-
-    summary = {}
-    for model in models:
-        summary[model] = {}
-        for metric in metrics:
-            per_district = results_dict[model].get(metric, {})
-            if not per_district:
-                summary[model][metric] = np.nan
-            else:
-                s = pd.Series(per_district)
-                if agg_func == "mean":
-                    summary[model][metric] = s.mean()
-                elif agg_func == "median":
-                    summary[model][metric] = s.median()
+    summary_data = {}
+    
+    for model_name, metrics_dict in results_dict.items():
+        model_summary = {}
+        
+        for metric_name, per_district in metrics_dict.items():
+            # Handle different types of per_district data
+            if isinstance(per_district, pd.Series):
+                if per_district.empty:
+                    model_summary[metric_name] = np.nan
                 else:
-                    raise ValueError("Unsupported agg_func")
-    summary_df = pd.DataFrame.from_dict(summary, orient="index")
-    summary_df = summary_df.dropna(axis=1, how="all")
-    return summary_df
+                    # Apply aggregation function
+                    if agg_func == "mean":
+                        model_summary[metric_name] = per_district.mean()
+                    elif agg_func == "median":
+                        model_summary[metric_name] = per_district.median()
+                    elif agg_func == "std":
+                        model_summary[metric_name] = per_district.std()
+                    else:
+                        # For other functions, try to use pandas method
+                        if hasattr(per_district, agg_func):
+                            model_summary[metric_name] = getattr(per_district, agg_func)()
+                        else:
+                            model_summary[metric_name] = np.nan
+            elif isinstance(per_district, dict):
+                # Convert dict to Series and then aggregate
+                per_district_series = pd.Series(per_district)
+                if per_district_series.empty:
+                    model_summary[metric_name] = np.nan
+                else:
+                    if agg_func == "mean":
+                        model_summary[metric_name] = per_district_series.mean()
+                    elif agg_func == "median":
+                        model_summary[metric_name] = per_district_series.median()
+                    elif agg_func == "std":
+                        model_summary[metric_name] = per_district_series.std()
+                    else:
+                        if hasattr(per_district_series, agg_func):
+                            model_summary[metric_name] = getattr(per_district_series, agg_func)()
+                        else:
+                            model_summary[metric_name] = np.nan
+            else:
+                # For scalar values, just use them as is
+                model_summary[metric_name] = per_district
+        
+        summary_data[model_name] = model_summary
+    
+    return pd.DataFrame(summary_data).T
 
 def normalize_summary(summary_df, invert_metrics=None):
     """
@@ -245,39 +278,46 @@ def main():
     experiments_results_dir = os.path.join(current_dir, "..", "experiments", "results")
 
 
-    # from metrics.equity_index_metric import calculate_new_equity_index
-    # from metrics.hdr_metric import calculate_hdr
-    # from metrics.overserved_area_metric import compute_overserved_area_count
-    # from metrics.hfdr_metric import calculate_hfdr
-    # from metrics.accessibility_score_metric import accessibility_score
+    from .metrics.equity_index_metric import calculate_new_equity_index
+    from .metrics.hdr_metric import calculate_hdr
+    from .metrics.overserved_area_metric import compute_overserved_area_count
+    from .metrics.hfdr_metric import calculate_hfdr
+    from .metrics.accessibility_score_metric import accessibility_score
 
     # Define the mapping from model names to their Excel file names
     excel_files = {
-        "main": "main.xlsx",
+        "status_quo_model": "status_quo.xlsx",
         "policy_maker_model": "policy_maker_model.xlsx",
-        "deprivation_aware_model": "deprivation_aware_model.xlsx",
+        "main_model": "main.xlsx",
         "demand_based_model": "demand_based_model.xlsx",
-        "status_quo_model": "status_quo_model.xlsx",
-        "accessibility_model": "accessibility_based_model.xlsx",
+        "deprivation_aware_model": "deprivation_aware_model.xlsx",
+        "accessibility_based_model": "accessibility_based_model.xlsx",
     }
 
     # Read each Excel file into a results dictionary
     results = {}
     # In this example, we assume the Excel file has a column 'District' and several metric columns.
+    
+    # Define the path to the hospital data file
+    hospital_data_path = os.path.join(current_dir, "..", "index_hospital_capacity", "data", "Krankenhausverzeichnis_2021.xlsx")
+    
     for model, filename in excel_files.items():
         path = os.path.join(experiments_results_dir, filename)
         
         results[model] = {
             "EquityScore": calculate_new_equity_index(path, modelname=model),
-            "HDR": calculate_hdr(path),
-            "OverServedAreaCount": compute_overserved_area_count(path),
-            "HFDR": calculate_hfdr(path),
+            "HDR": calculate_hdr(hospital_data_path),
+            "OverServedAreaCount": compute_overserved_area_count(hospital_data_path),
+            "HFDR": calculate_hfdr(hospital_data_path),
         }
     
 
     accessibility_score_results = accessibility_score()
 
-    for acc in accessibility_score_results:
+    # Convert DataFrame to list of dictionaries for easier processing
+    accessibility_results_list = accessibility_score_results.to_dict('records')
+    
+    for acc in accessibility_results_list:
         model_name = acc["model"]
         if model_name in results:
             results[model_name]["AccessibilityScore"] = {
@@ -311,6 +351,10 @@ def main():
     ratios_demands_data = {}
     # Create a list of demands in consistent order
     demands_array = np.array([demands[d] for d in districts], dtype=float)
+    
+    models = ["status_quo_model", "policy_maker_model", "main_model",
+              "demand_based_model", "deprivation_aware_model", "accessibility_based_model"]
+    
     for model in models:
         # Extract per-district ratios in same order
         ratio_dict = results[model].get("CapacityToDemandRatio", {})
