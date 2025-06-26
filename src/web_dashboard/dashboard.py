@@ -48,6 +48,16 @@ view_state = pdk.ViewState(latitude=49.25, longitude=7.0, zoom=10, pitch=0)
 st.subheader("Hospital Locations (Current and Predicted)")
 st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"text": "{name} ({type})"}))
 
+# Add a legend below the map
+st.markdown("""
+<div style='display: flex; align-items: center; margin-bottom: 32px;'>
+    <div style='width: 20px; height: 20px; background: rgb(0,0,255); border-radius: 50%; margin-right: 8px;'></div>
+    <span style='margin-right: 24px;'>Current Hospital</span>
+    <div style='width: 20px; height: 20px; background: rgb(0,255,0); border-radius: 50%; margin-right: 8px;'></div>
+    <span>Predicted Hospital</span>
+</div>
+""", unsafe_allow_html=True)
+
 st.write("Predicted hospitals (dummy):")
 st.dataframe(predicted_hospitals)
 
