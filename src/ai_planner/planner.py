@@ -33,7 +33,7 @@ from shapely.geometry import Point
 import osmnx as ox
 import pulp
 import cma
-from .utils import get_existing_hospitals_gdf
+from ai_planner.utils import get_existing_hospitals_gdf
 
 # Geographic coordinate system configuration
 CRS_NUM = 4326
@@ -214,6 +214,12 @@ class HospitalPlanner:
             self.candidates_gdf.geometry.x,
             self.candidates_gdf.geometry.y
         )
+        
+        # Add coordinates of nearest nodes as Point objects
+        node_coords = []
+        for node_id in self.candidates_gdf['node']:
+            node_coords.append(Point(G.nodes[node_id]['x'], G.nodes[node_id]['y']))
+        self.candidates_gdf['coordinate_node'] = node_coords
         
         self.G = G
     
@@ -606,8 +612,8 @@ class HospitalPlanner:
         selected_candidates = self.candidates_gdf.iloc[selected]
         selected_candidates['bed_allocation'] = selected_candidates.index.map(lambda id: beds[id])
         selected_candidates = selected_candidates.assign(
-            Lat=selected_candidates.geometry.y,
-            Lon=selected_candidates.geometry.x
+            Lat=selected_candidates['coordinate_node'].map(lambda x: x.y),
+            Lon=selected_candidates['coordinate_node'].map(lambda x: x.x)
         )
         hospital_gdf = self.hospital_gdf.copy()
         hospital_gdf['type'] = 'existing'
