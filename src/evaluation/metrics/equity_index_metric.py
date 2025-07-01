@@ -6,6 +6,14 @@ from accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scale
 import os
 import pandas as pd
 
+# StrEnum compatibility for Python < 3.11
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
+
 SAARLAND_AGS = [
     "10041",  # Regionalverband Saarbrücken
     "10042",  # Merzig-Wadern

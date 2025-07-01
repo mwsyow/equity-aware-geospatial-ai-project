@@ -3,8 +3,17 @@ import pandas as pd
 import numpy as np
 import geopandas as gpd
 from shapely.geometry import Point
-from enum import StrEnum
 
+# StrEnum compatibility for Python < 3.11
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
+
+from ai_planner.planner import HospitalPlanner, CRS
+from index_demand_forecast.demand_forecast import (
 from ai_planner.planner import HospitalPlanner, CRS
 from index_demand_forecast.demand_forecast import (
     forecast_demand_per_district_in_saarland as run_demand_forecast,
@@ -18,9 +27,16 @@ from index_gisd.gisd import run as run_gisd
 from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
 from index_travel_accessibility.TAI import RUN as run_travel_time_index
 from index_travel_accessibility.travel_time_and_centroid import (
+from index_demand_forecast.demand_forecast import forecast_demand_per_district_in_saarland as run_demand_forecast
+from index_elderly_share.elderly_share import run as run_elderly_share
+from index_gisd.gisd import run as run_gisd
+from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospital_capacity_index as run_hospital_capacity_index
+from index_travel_accessibility.TAI import RUN as run_travel_time_index
+from index_travel_accessibility.travel_time_and_centroid import (
     get_centroids, 
     map_predicted_and_existing_hospitals
 )
+
 class Index(StrEnum):
     FORECAST_DEMAND = "forecast_demand_index"
     ELDERLY_SHARE = "elderly_share_index"

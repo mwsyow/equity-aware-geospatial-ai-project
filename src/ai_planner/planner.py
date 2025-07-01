@@ -33,6 +33,10 @@ from shapely.geometry import Point
 import osmnx as ox
 import pulp
 import cma
+import sys
+from pathlib import Path
+sys.path.append(str(Path("ai_planner").resolve()))
+
 from ai_planner.utils import get_existing_hospitals_gdf
 
 # Geographic coordinate system configuration
@@ -400,22 +404,21 @@ class HospitalPlanner:
         ) -> pulp.LpProblem:
         """
         Add constraints considering existing hospital infrastructure.
-        
+
         Modifies the optimization model to account for existing hospitals by:
         1. Adding supply oversaturation penalty
         2. Preventing placement too close to existing facilities
-        
+
         Args:
-            gdf (gpd.GeoDataFrame): Existing hospitals with 'MaxBeds' column
             supply_weight (float): Weight for supply oversaturation penalty (0-1)
             distance_threshold (int): Minimum distance from existing hospitals (meters)
             num_neighbors (int): Maximum allowed existing hospital neighbors
-            
+
         Side Effects:
             Modifies self.model by adding supply penalty and proximity constraints
         """
         candidates_gdf = self.candidates_gdf.copy()
-        
+
         # Find existing hospital neighbors for each candidate
         is_existing_hospitals_neighbors = {}
         for h in candidates_gdf.index: 
@@ -423,15 +426,16 @@ class HospitalPlanner:
             for (i, j), dist in self.distance_existing_hospitals.items():
                 if dist <= distance_threshold and i == h and i != j:
                     is_existing_hospitals_neighbors[h].append(j)
+
         # Calculate total supply (existing + new hospital capacity)
         candidates_gdf['total_supply'] = [
             self.hospital_gdf.iloc[is_existing_hospitals_neighbors[h]]['bed_allocation'].sum() + 1 
             for h in candidates_gdf.index
         ]
-        
+
         supply_raw = dict(zip(candidates_gdf.index, candidates_gdf['total_supply']))
         supply_norm = self.normalize_metric(supply_raw)
-        
+
         # Add supply oversaturation penalty to objective
         self.model.objective -= (
             supply_weight * pulp.lpSum(
@@ -439,12 +443,14 @@ class HospitalPlanner:
                 for p in self.P 
             )
         )
-        
+
         # Add proximity constraints: prevent placement near existing hospitals
         for p in self.P:
             if len(is_existing_hospitals_neighbors[p]) >= num_neighbors:
                 self.model += self.x[p] == 0, f"Close_if_has_more_than_{num_neighbors}_existing_hospitals_neighbors_{p}"
-    
+
+        return self.model
+
     def build_distance_metric_c2c(self) -> None:
         self.is_candidate_neighbors = HospitalPlanner.calculate_ttm(
             self.G,
@@ -455,23 +461,25 @@ class HospitalPlanner:
     
     def add_neighbor_constraints(self, distance_threshold: int = 7_000) -> pulp.LpProblem:
         """
-        Add constraints to prevent placing hospitals too close to each other.
-        
-        Creates mutual exclusion constraints between candidate locations that are
-        within the specified distance threshold to avoid oversaturation.
-        
+        Add soft constraints to discourage placing hospitals too close to each other.
+
+        Instead of hard exclusion, apply a proportional penalty for candidate pairs
+        that are within the specified distance threshold.
+
         Args:
-            distance_threshold (int): Minimum distance between new hospitals (meters)
-            
+            distance_threshold (int): Distance threshold below which penalties apply (meters)
+
         Side Effects:
-            Modifies self.model by adding neighbor exclusion constraints
+            Modifies self.model by adding penalty terms to encourage spacing
         """
-        is_candidate_neighbors = {k: v for k, v in self.is_candidate_neighbors.items() if v <= distance_threshold}
-        
-        # Add mutual exclusion constraints for neighboring candidates
-        for (p1, p2), is_neighbor in is_candidate_neighbors.items():
-            if p1 != p2 and is_neighbor == 1:
-                self.model += self.x[p1] + self.x[p2] <= 1, f"No_candidate_neighbors_{p1}_{p2}"
+        for i in self.P:
+            for j in self.P:
+                if i < j:
+                    dist = self.is_candidate_neighbors[(i, j)]
+                    if dist < distance_threshold:
+                        penalty = (distance_threshold - dist) / distance_threshold
+                        # Penalize but allow proximity
+                        self.model += self.x[i] + self.x[j] <= 1 + penalty, f"Soft_spacing_penalty_{i}_{j}"
     
     def set_num_predictions(self, k: int) -> pulp.LpProblem:
         """
@@ -529,32 +537,68 @@ class HospitalPlanner:
         self.build_distance_metric_c2c()
     
     def compute_loss(self, 
-        selected_candidates: gpd.GeoDataFrame, 
-        hospital_gdf: gpd.GeoDataFrame,
-        ) -> dict[str, float]:
+    selected_candidates: gpd.GeoDataFrame, 
+    hospital_gdf: gpd.GeoDataFrame,
+) -> float:
         """
-        Compute loss function for each district
+        Compute a multi-objective loss function combining:
+        - Coverage (travel times)
+        - Realistic spacing
+        - Equity (travel-time variance)
         """
         loss = {}
+        travel_variance = []
+        coverage_scores = []
+        spacing_penalty = 0
         district_codes = self.districts_gdf['district_code'].unique().tolist()
+
         for district_code in district_codes:
             centroids = self.districts_gdf[self.districts_gdf['district_code'] == district_code]['centroid']
             candidates = selected_candidates[selected_candidates['district_code'] == district_code]
             hospitals = hospital_gdf[hospital_gdf['district_code'] == district_code]
-            temp_cent = []
-            if len(candidates) > 0 or len(hospitals) > 0:
-                for centroid in centroids.index:
-                    temp = []
-                    for candidate in candidates.index:
-                        travel_time = self.ttm_district_to_candidate[(centroid, candidate)]
-                        temp.append(travel_time if travel_time < float('inf') else 0)
-                    for hospital in hospitals.index:
-                        travel_time = self.ttm_district_to_existing_hospital[(centroid, hospital)]
-                        temp.append(travel_time if travel_time < float('inf') else 0)
-                    if len(temp) > 0:
-                        temp_cent.append(sum(temp) / len(temp))
-                loss[district_code] = sum(temp_cent) / len(temp_cent) if len(temp_cent) > 0 else 0
-        return sum(list(loss.values())) / len(loss)
+            centroid_travel_times = []
+
+            for centroid in centroids.index:
+                temp = []
+                for candidate in candidates.index:
+                    travel_time = self.ttm_district_to_candidate.get((centroid, candidate), float('inf'))
+                    if travel_time < float('inf'):
+                        temp.append(travel_time)
+                for hospital in hospitals.index:
+                    travel_time = self.ttm_district_to_existing_hospital.get((centroid, hospital), float('inf'))
+                    if travel_time < float('inf'):
+                        temp.append(travel_time)
+                if temp:
+                    avg_time = sum(temp) / len(temp)
+                    centroid_travel_times.append(avg_time)
+
+            # Metrics per district
+            if centroid_travel_times:
+                mean_travel = sum(centroid_travel_times) / len(centroid_travel_times)
+                var_travel = np.var(centroid_travel_times)
+                loss[district_code] = mean_travel
+                travel_variance.append(var_travel)
+                coverage_scores.append(1 / (1 + mean_travel))  # higher is better
+
+        # Spacing penalty among selected candidates (only if coverage is acceptable)
+        if coverage_scores and np.mean(coverage_scores) > 0.05:
+            coords = np.array([[pt.x, pt.y] for pt in selected_candidates.geometry])
+            for i in range(len(coords)):
+                for j in range(i + 1, len(coords)):
+                    dist = np.linalg.norm(coords[i] - coords[j])
+                    if dist < self.c2c_distance_threshold:
+                        spacing_penalty += (self.c2c_distance_threshold - dist) / self.c2c_distance_threshold
+
+        mean_loss = np.mean(list(loss.values())) if loss else 0
+        mean_var = np.mean(travel_variance) if travel_variance else 0
+
+        # Weighted loss: dynamic balance
+        final_loss = (
+            1.0 * mean_loss +              # Coverage (lower avg travel time)
+            0.7 * spacing_penalty +        # Only matters when coverage is decent
+            0.5 * mean_var                 # Equity (uniform access)
+        )
+        return final_loss
     
     def predict_location(self, 
         weights: dict[str, float],
@@ -599,11 +643,15 @@ class HospitalPlanner:
             min_beds_per_hospital=min_beds_per_hospital,
             max_beds=max_beds,
         )
+        # Build the existing hospital distance matrix before using it
+        self.build_distance_metric_c2eh()
         self.add_existing_hospitals_constraints(
             supply_weight=weights['supply_weight'],
             num_neighbors=num_neighbors,
             distance_threshold=eh_distance_threshold,
         )
+        # Build the candidate-to-candidate distance matrix before using it
+        self.build_distance_metric_c2c()
         self.add_neighbor_constraints(
             distance_threshold=c2c_distance_threshold,
         )
