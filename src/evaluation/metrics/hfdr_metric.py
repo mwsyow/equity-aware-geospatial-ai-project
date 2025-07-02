@@ -8,7 +8,14 @@ from index_demand_forecast.demand_forecast import (
     
 )
 import pandas as pd
-from enum import StrEnum
+
+# StrEnum compatibility for Python < 3.11
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
 
 CUT_OFF_YEAR = 2021
 YEAR = 'time'

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 #Higher value of EquityIndex should mean worse equity and vice versa
 from shapely.geometry import Point
-from bayes_opt import BayesianOptimization
+from skopt import gp_minimize
 
 COST_PER_BED = 1500  # Average cost per bed in EUR
 
@@ -142,18 +142,17 @@ class AgenticPlanner:
         for s in self.hospitals.index:
             pbounds[f"beds_{s}"] = (0, self.hospitals.loc[s, "MaxBeds"])
 
-        optimizer = BayesianOptimization(
-            f=objective_function,
+        optimizer = gp_minimize(
+            objective_function,
             pbounds=pbounds,
-            random_state=42,
-            verbose=2
+            n_calls=15,
+            n_random_starts=5,
+            random_state=42
         )
 
-        optimizer.maximize(init_points=5, n_iter=15)
-
-        best_params = optimizer.max["params"]
+        best_params = optimizer.x
         for s in self.hospitals.index:
-            val = int(round(best_params.get(f"beds_{s}", 0) / 50)) * 50
+            val = int(round(best_params[f"beds_{s}"] / 50)) * 50
             if val > 0:
                 self.open_sites.add(s)
                 self.beds_alloc[s] = val
