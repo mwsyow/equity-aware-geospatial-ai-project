@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_3c93e2334395593e131a148d1da7a24f {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    
+                    <style>
+                        .foliumtooltip {
+                            
+                        }
+                       .foliumtooltip table{
+                            margin: auto;
+                        }
+                        .foliumtooltip tr{
+                            text-align: left;
+                        }
+                        .foliumtooltip th{
+                            padding: 2px; padding-right: 8px;
+                        }
+                    </style>
+            
+</head>
+<body>
+    
+    
+    <div style="position: fixed; 
+                bottom: 40px; left: 40px; width: 200px; height: 100px; 
+                background-color: white; border:2px solid grey; z-index:9999; 
+                font-size:14px; padding: 10px;">
+        <b>Legend</b><br>
+        <i class="fa fa-map-marker fa-2x" style="color:red"></i> Existing Hospital<br>
+        <i class="fa fa-map-marker fa-2x" style="color:blue"></i> Predicted Hospital
+    </div>
+    
+    
+            <div class="folium-map" id="map_3c93e2334395593e131a148d1da7a24f" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_3c93e2334395593e131a148d1da7a24f = L.map(
+                "map_3c93e2334395593e131a148d1da7a24f",
+                {
+                    center: [49.3964, 7.022],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 10,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_86fcbf5331eedc25fe0e2f1a3aa70b60 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_86fcbf5331eedc25fe0e2f1a3aa70b60.addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var marker_b2c4a9767a6e01ea2469875554787c5d = L.marker(
+                [49.2770657, 7.0413182],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_49a5b648b50dc20c3f075753423d0dcc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_59e16ff4249db94b71678e131c5dbda5 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_97641b83ed813bea1675736089fc8dce = $(`<div id="html_97641b83ed813bea1675736089fc8dce" style="width: 100.0%; height: 100.0%;">Existing Hospital: Caritasklinikum Saarbrücken St. Theresia</div>`)[0];
+                popup_59e16ff4249db94b71678e131c5dbda5.setContent(html_97641b83ed813bea1675736089fc8dce);
+            
+        
+
+        marker_b2c4a9767a6e01ea2469875554787c5d.bindPopup(popup_59e16ff4249db94b71678e131c5dbda5)
+        ;
+
+        
+    
+    
+                marker_b2c4a9767a6e01ea2469875554787c5d.setIcon(icon_49a5b648b50dc20c3f075753423d0dcc);
+            
+    
+            var marker_4e9d06176307c35fd516226185c89b9b = L.marker(
+                [49.2475551, 6.9599699],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_d93f45c2717a48ddafb93f2225205e44 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d23ef5f153f9db2b9ba8639ae017aa90 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_d3d4ff2e6316a132e1b58b785f3fb2c0 = $(`<div id="html_d3d4ff2e6316a132e1b58b785f3fb2c0" style="width: 100.0%; height: 100.0%;">Existing Hospital: Caritasklinikum Saarbrücken St. Theresia</div>`)[0];
+                popup_d23ef5f153f9db2b9ba8639ae017aa90.setContent(html_d3d4ff2e6316a132e1b58b785f3fb2c0);
+            
+        
+
+        marker_4e9d06176307c35fd516226185c89b9b.bindPopup(popup_d23ef5f153f9db2b9ba8639ae017aa90)
+        ;
+
+        
+    
+    
+                marker_4e9d06176307c35fd516226185c89b9b.setIcon(icon_d93f45c2717a48ddafb93f2225205e44);
+            
+    
+            var marker_1afebccff1bc432d3923c493c160f3aa = L.marker(
+                [49.2370854, 6.9925905],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_bf840a816e2ac5ea1a7d6cbb237e0a49 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_75e0438924a9c25b17c55dc61b663b26 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_b90f14e3bbcfea24e8e859324f12b276 = $(`<div id="html_b90f14e3bbcfea24e8e859324f12b276" style="width: 100.0%; height: 100.0%;">Existing Hospital: Dr. Jäger Privatkliniken</div>`)[0];
+                popup_75e0438924a9c25b17c55dc61b663b26.setContent(html_b90f14e3bbcfea24e8e859324f12b276);
+            
+        
+
+        marker_1afebccff1bc432d3923c493c160f3aa.bindPopup(popup_75e0438924a9c25b17c55dc61b663b26)
+        ;
+
+        
+    
+    
+                marker_1afebccff1bc432d3923c493c160f3aa.setIcon(icon_bf840a816e2ac5ea1a7d6cbb237e0a49);
+            
+    
+            var marker_b7fee5d6d468f4eee8e69af0a32b4e78 = L.marker(
+                [49.2212209, 6.994143],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_a28c6e5a865053889a0b1cbec55641e2 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e331c04d09ca449595e2cbecaf911afb = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_b5f77f9c65d72876f8e138bade2f9434 = $(`<div id="html_b5f77f9c65d72876f8e138bade2f9434" style="width: 100.0%; height: 100.0%;">Existing Hospital: Klinikum Saarbrücken gGmbH</div>`)[0];
+                popup_e331c04d09ca449595e2cbecaf911afb.setContent(html_b5f77f9c65d72876f8e138bade2f9434);
+            
+        
+
+        marker_b7fee5d6d468f4eee8e69af0a32b4e78.bindPopup(popup_e331c04d09ca449595e2cbecaf911afb)
+        ;
+
+        
+    
+    
+                marker_b7fee5d6d468f4eee8e69af0a32b4e78.setIcon(icon_a28c6e5a865053889a0b1cbec55641e2);
+            
+    
+            var marker_c5f3ece2740b562e3a97bd60c26436c5 = L.marker(
+                [49.246999, 6.9635544],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_7b436afd1159bc1450b07c114610ec15 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e3af01a7fc38d2fa4c5411408f68e221 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_4c7942e267e165635bb8f2d2257d39e8 = $(`<div id="html_4c7942e267e165635bb8f2d2257d39e8" style="width: 100.0%; height: 100.0%;">Existing Hospital: Saarland-Heilstätten Gmbh  SHG-Kliniken Sonnenberg</div>`)[0];
+                popup_e3af01a7fc38d2fa4c5411408f68e221.setContent(html_4c7942e267e165635bb8f2d2257d39e8);
+            
+        
+
+        marker_c5f3ece2740b562e3a97bd60c26436c5.bindPopup(popup_e3af01a7fc38d2fa4c5411408f68e221)
+        ;
+
+        
+    
+    
+                marker_c5f3ece2740b562e3a97bd60c26436c5.setIcon(icon_7b436afd1159bc1450b07c114610ec15);
+            
+    
+            var marker_4fda28f1966895c66dfe119647749a85 = L.marker(
+                [49.2003929, 7.0114755],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_330e37c964b0af1e5c3da88b9fd0dd44 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3b33c3311a3eeaf6b60aa11da2e3d865 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_bb6abe35a2bdb9356aafd3d2f0faf179 = $(`<div id="html_bb6abe35a2bdb9356aafd3d2f0faf179" style="width: 100.0%; height: 100.0%;">Existing Hospital: Saarland-Heilstätten Gmbh  SHG-Kliniken Sonnenberg</div>`)[0];
+                popup_3b33c3311a3eeaf6b60aa11da2e3d865.setContent(html_bb6abe35a2bdb9356aafd3d2f0faf179);
+            
+        
+
+        marker_4fda28f1966895c66dfe119647749a85.bindPopup(popup_3b33c3311a3eeaf6b60aa11da2e3d865)
+        ;
+
+        
+    
+    
+                marker_4fda28f1966895c66dfe119647749a85.setIcon(icon_330e37c964b0af1e5c3da88b9fd0dd44);
+            
+    
+            var marker_d9f6e5e8d652782e3afbf4239b246ecb = L.marker(
+                [49.27386, 7.0092555],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_f0c55bd01f58af1e35376a30aa5c6f33 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1aa051cce236aa792a8e5b492bd736eb = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_c414b991eeea7332fa52b15b396dd67e = $(`<div id="html_c414b991eeea7332fa52b15b396dd67e" style="width: 100.0%; height: 100.0%;">Existing Hospital: Saar-Mosel-Klinik</div>`)[0];
+                popup_1aa051cce236aa792a8e5b492bd736eb.setContent(html_c414b991eeea7332fa52b15b396dd67e);
+            
+        
+
+        marker_d9f6e5e8d652782e3afbf4239b246ecb.bindPopup(popup_1aa051cce236aa792a8e5b492bd736eb)
+        ;
+
+        
+    
+    
+                marker_d9f6e5e8d652782e3afbf4239b246ecb.setIcon(icon_f0c55bd01f58af1e35376a30aa5c6f33);
+            
+    
+            var marker_c100c3c26247b6c8b147995e6e964dd2 = L.marker(
+                [49.232725, 7.0035638],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_51801a44981dcdf34c9e22f50fe38428 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_37be063176e996a2e27c03433628e46f = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_5d7ccc71cff84ce4c1828551f8a414d6 = $(`<div id="html_5d7ccc71cff84ce4c1828551f8a414d6" style="width: 100.0%; height: 100.0%;">Existing Hospital: Stiftung Kreuznacher Diakonie Evangelisches Stadtkrankenhaus</div>`)[0];
+                popup_37be063176e996a2e27c03433628e46f.setContent(html_5d7ccc71cff84ce4c1828551f8a414d6);
+            
+        
+
+        marker_c100c3c26247b6c8b147995e6e964dd2.bindPopup(popup_37be063176e996a2e27c03433628e46f)
+        ;
+
+        
+    
+    
+                marker_c100c3c26247b6c8b147995e6e964dd2.setIcon(icon_51801a44981dcdf34c9e22f50fe38428);
+            
+    
+            var marker_0bf8372b9ea128ae65b82185c456f4a5 = L.marker(
+                [49.1530091, 7.0483363],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_5b19764d8b02bbffaf4141ca3481f6b2 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e148bf0a9cbf2e7f5cb11debb5fa3d70 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_7c096674121719240bf33aaab8516997 = $(`<div id="html_7c096674121719240bf33aaab8516997" style="width: 100.0%; height: 100.0%;">Existing Hospital: Saarland-Heilstätten Gmbh  SHG-Kliniken Sonnenberg</div>`)[0];
+                popup_e148bf0a9cbf2e7f5cb11debb5fa3d70.setContent(html_7c096674121719240bf33aaab8516997);
+            
+        
+
+        marker_0bf8372b9ea128ae65b82185c456f4a5.bindPopup(popup_e148bf0a9cbf2e7f5cb11debb5fa3d70)
+        ;
+
+        
+    
+    
+                marker_0bf8372b9ea128ae65b82185c456f4a5.setIcon(icon_5b19764d8b02bbffaf4141ca3481f6b2);
+            
+    
+            var marker_464e2177841508ec2e5255c40177628f = L.marker(
+                [49.276946, 6.8701212],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_bcc0860fe326999c7f1906415d7cc31d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_76c0b637fb6ee796e10f20b2d17ed164 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_0930b3003aa8927ba7853fb17fe0622f = $(`<div id="html_0930b3003aa8927ba7853fb17fe0622f" style="width: 100.0%; height: 100.0%;">Existing Hospital: Knappschaftsklinikum Saar GmbH Klinik Püttlingen</div>`)[0];
+                popup_76c0b637fb6ee796e10f20b2d17ed164.setContent(html_0930b3003aa8927ba7853fb17fe0622f);
+            
+        
+
+        marker_464e2177841508ec2e5255c40177628f.bindPopup(popup_76c0b637fb6ee796e10f20b2d17ed164)
+        ;
+
+        
+    
+    
+                marker_464e2177841508ec2e5255c40177628f.setIcon(icon_bcc0860fe326999c7f1906415d7cc31d);
+            
+    
+            var marker_963ccc98efdad20c98ec5d11cce54865 = L.marker(
+                [49.2977342, 7.054714],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_1178114e12a25a900de39f57d7dde5db = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c2d9d851cf2fc51db5d16b2e32cae7b6 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_e05192154c9202603a2e080465405110 = $(`<div id="html_e05192154c9202603a2e080465405110" style="width: 100.0%; height: 100.0%;">Existing Hospital: Knappschaftsklinikum Saar GmbH  Klinik Sulzbach</div>`)[0];
+                popup_c2d9d851cf2fc51db5d16b2e32cae7b6.setContent(html_e05192154c9202603a2e080465405110);
+            
+        
+
+        marker_963ccc98efdad20c98ec5d11cce54865.bindPopup(popup_c2d9d851cf2fc51db5d16b2e32cae7b6)
+        ;
+
+        
+    
+    
+                marker_963ccc98efdad20c98ec5d11cce54865.setIcon(icon_1178114e12a25a900de39f57d7dde5db);
+            
+    
+            var marker_d8f1109c54f83d65abd8973d658b0f28 = L.marker(
+                [49.2572588, 6.8525412],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_43ca219eafdd38e330dd85c906121506 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5c8f344606567b26bc4599560d98ab5a = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_38a232240231c481c7fa4f7eb863577e = $(`<div id="html_38a232240231c481c7fa4f7eb863577e" style="width: 100.0%; height: 100.0%;">Existing Hospital: Saarland-Heilstätten GmbH SHG-Kliniken Völklingen</div>`)[0];
+                popup_5c8f344606567b26bc4599560d98ab5a.setContent(html_38a232240231c481c7fa4f7eb863577e);
+            
+        
+
+        marker_d8f1109c54f83d65abd8973d658b0f28.bindPopup(popup_5c8f344606567b26bc4599560d98ab5a)
+        ;
+
+        
+    
+    
+                marker_d8f1109c54f83d65abd8973d658b0f28.setIcon(icon_43ca219eafdd38e330dd85c906121506);
+            
+    
+            var marker_d59d1de1e0bf1a69cca9dd08da60020d = L.marker(
+                [49.4571859, 6.6315777],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_4e53be077573e9b2822b42e7689f115b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c89fc3fb9c391ac8477d3126551336bb = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_1faecb235357bd9d34d8d3464d9d66ea = $(`<div id="html_1faecb235357bd9d34d8d3464d9d66ea" style="width: 100.0%; height: 100.0%;">Existing Hospital: Klinikum Merzig gGmbH</div>`)[0];
+                popup_c89fc3fb9c391ac8477d3126551336bb.setContent(html_1faecb235357bd9d34d8d3464d9d66ea);
+            
+        
+
+        marker_d59d1de1e0bf1a69cca9dd08da60020d.bindPopup(popup_c89fc3fb9c391ac8477d3126551336bb)
+        ;
+
+        
+    
+    
+                marker_d59d1de1e0bf1a69cca9dd08da60020d.setIcon(icon_4e53be077573e9b2822b42e7689f115b);
+            
+    
+            var marker_526956a2cbe4d039536a851295add12c = L.marker(
+                [49.4957688, 6.5967711],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_9f8c55d10513faff6b20ae9ab42ea4c2 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_40c09275f71d7ec16b3651983e90c015 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_0f8ef9ce18819ec32825b0f8047860d0 = $(`<div id="html_0f8ef9ce18819ec32825b0f8047860d0" style="width: 100.0%; height: 100.0%;">Existing Hospital: DRK-Klinik Mettlach für Geriatrie und Rehabilitation</div>`)[0];
+                popup_40c09275f71d7ec16b3651983e90c015.setContent(html_0f8ef9ce18819ec32825b0f8047860d0);
+            
+        
+
+        marker_526956a2cbe4d039536a851295add12c.bindPopup(popup_40c09275f71d7ec16b3651983e90c015)
+        ;
+
+        
+    
+    
+                marker_526956a2cbe4d039536a851295add12c.setIcon(icon_9f8c55d10513faff6b20ae9ab42ea4c2);
+            
+    
+            var marker_6e663ffa7c05c8f9d08cc30134e0ad85 = L.marker(
+                [49.5378676, 6.8893404],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_5ab3b016c053d585a8b60e28f6190726 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_172b533964f4b148cd2c72a1b89cfb96 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_672a589a5d864fc333f397f9a0844e9f = $(`<div id="html_672a589a5d864fc333f397f9a0844e9f" style="width: 100.0%; height: 100.0%;">Existing Hospital: Klinikum Merzig gGmbH</div>`)[0];
+                popup_172b533964f4b148cd2c72a1b89cfb96.setContent(html_672a589a5d864fc333f397f9a0844e9f);
+            
+        
+
+        marker_6e663ffa7c05c8f9d08cc30134e0ad85.bindPopup(popup_172b533964f4b148cd2c72a1b89cfb96)
+        ;
+
+        
+    
+    
+                marker_6e663ffa7c05c8f9d08cc30134e0ad85.setIcon(icon_5ab3b016c053d585a8b60e28f6190726);
+            
+    
+            var marker_7aedf90972957013575837952aab9485 = L.marker(
+                [49.3409594, 7.1830206],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_cb53912053a4ef7cc38cdb4f6e6ff93b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c74e3dbbec41dbf2c12a31e35b3b4740 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_06e315dbc993a1579257028b2ba85a0c = $(`<div id="html_06e315dbc993a1579257028b2ba85a0c" style="width: 100.0%; height: 100.0%;">Existing Hospital: Diakonie Klinikum Neunkirchen gGmbH Kreuznacher Diakonie</div>`)[0];
+                popup_c74e3dbbec41dbf2c12a31e35b3b4740.setContent(html_06e315dbc993a1579257028b2ba85a0c);
+            
+        
+
+        marker_7aedf90972957013575837952aab9485.bindPopup(popup_c74e3dbbec41dbf2c12a31e35b3b4740)
+        ;
+
+        
+    
+    
+                marker_7aedf90972957013575837952aab9485.setIcon(icon_cb53912053a4ef7cc38cdb4f6e6ff93b);
+            
+    
+            var marker_a914fbf36ab4760cf30ba6fe18f4a89b = L.marker(
+                [49.3177556, 7.2270153],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_5c07129d7f962940b366ea97cdbfd3ba = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d2bb8d634c25cf1452492591e5e59cc8 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_9f3536e9446c18fef9a56c1b0a84cef5 = $(`<div id="html_9f3536e9446c18fef9a56c1b0a84cef5" style="width: 100.0%; height: 100.0%;">Existing Hospital: Marienhausklinik St. Josef Kohlhof</div>`)[0];
+                popup_d2bb8d634c25cf1452492591e5e59cc8.setContent(html_9f3536e9446c18fef9a56c1b0a84cef5);
+            
+        
+
+        marker_a914fbf36ab4760cf30ba6fe18f4a89b.bindPopup(popup_d2bb8d634c25cf1452492591e5e59cc8)
+        ;
+
+        
+    
+    
+                marker_a914fbf36ab4760cf30ba6fe18f4a89b.setIcon(icon_5c07129d7f962940b366ea97cdbfd3ba);
+            
+    
+            var marker_611c95b56ad8d9bda6d1cbb84272363f = L.marker(
+                [49.3482934, 7.1858034],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_9bdceca0a91af552e9bd01fb7d593d28 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_37c96226d7e8c27b86045559edefe2a5 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_597c9a08815dedbd78ec7fd903b0e9de = $(`<div id="html_597c9a08815dedbd78ec7fd903b0e9de" style="width: 100.0%; height: 100.0%;">Existing Hospital: Stiftung Kreuznacher Diakonie Fliedner Krankenhaus</div>`)[0];
+                popup_37c96226d7e8c27b86045559edefe2a5.setContent(html_597c9a08815dedbd78ec7fd903b0e9de);
+            
+        
+
+        marker_611c95b56ad8d9bda6d1cbb84272363f.bindPopup(popup_37c96226d7e8c27b86045559edefe2a5)
+        ;
+
+        
+    
+    
+                marker_611c95b56ad8d9bda6d1cbb84272363f.setIcon(icon_9bdceca0a91af552e9bd01fb7d593d28);
+            
+    
+            var marker_b84b42e8d8ca12347820e4586c8b738c = L.marker(
+                [49.4190916, 6.88979],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_ba8e38efbbd3137b539bd7d2cb876a9a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_845ad57ff46e4e45e18f676f2f0e6fe1 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_1b1e29f7e2b58dff4e7ff4a2a606b078 = $(`<div id="html_1b1e29f7e2b58dff4e7ff4a2a606b078" style="width: 100.0%; height: 100.0%;">Existing Hospital: Caritas-Krankenhaus Lebach</div>`)[0];
+                popup_845ad57ff46e4e45e18f676f2f0e6fe1.setContent(html_1b1e29f7e2b58dff4e7ff4a2a606b078);
+            
+        
+
+        marker_b84b42e8d8ca12347820e4586c8b738c.bindPopup(popup_845ad57ff46e4e45e18f676f2f0e6fe1)
+        ;
+
+        
+    
+    
+                marker_b84b42e8d8ca12347820e4586c8b738c.setIcon(icon_ba8e38efbbd3137b539bd7d2cb876a9a);
+            
+    
+            var marker_bc32655a146be8ff5c64da1d0249d458 = L.marker(
+                [49.412574, 6.909871],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_39439a1151db3756d4836aee62079f27 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_415e0473c9510af1a4d49a0d6fa5ba57 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_d3575d96264ed9460eaf34a9fcee5555 = $(`<div id="html_d3575d96264ed9460eaf34a9fcee5555" style="width: 100.0%; height: 100.0%;">Existing Hospital: St. Nikolaus-Hospital Wallerfangen</div>`)[0];
+                popup_415e0473c9510af1a4d49a0d6fa5ba57.setContent(html_d3575d96264ed9460eaf34a9fcee5555);
+            
+        
+
+        marker_bc32655a146be8ff5c64da1d0249d458.bindPopup(popup_415e0473c9510af1a4d49a0d6fa5ba57)
+        ;
+
+        
+    
+    
+                marker_bc32655a146be8ff5c64da1d0249d458.setIcon(icon_39439a1151db3756d4836aee62079f27);
+            
+    
+            var marker_2a758590db733f48d00c06b9cdc0631a = L.marker(
+                [49.3136491, 6.7442788],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_5b12f64d95cba3296830a39d31b89995 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f166744fb01186658c442138bc6f172f = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_e0bffbef88b02bce9ea09efb4673009e = $(`<div id="html_e0bffbef88b02bce9ea09efb4673009e" style="width: 100.0%; height: 100.0%;">Existing Hospital: Krankenhaus Saarlouis vom DRK</div>`)[0];
+                popup_f166744fb01186658c442138bc6f172f.setContent(html_e0bffbef88b02bce9ea09efb4673009e);
+            
+        
+
+        marker_2a758590db733f48d00c06b9cdc0631a.bindPopup(popup_f166744fb01186658c442138bc6f172f)
+        ;
+
+        
+    
+    
+                marker_2a758590db733f48d00c06b9cdc0631a.setIcon(icon_5b12f64d95cba3296830a39d31b89995);
+            
+    
+            var marker_ca8bd9d1fa66e77972cf16f806403cca = L.marker(
+                [49.3152364, 6.7564872],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_da8800c6b801864cb006502ddd98a211 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8f02b61ef081c0ca5f630d9fd3b7f51e = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_36f98cbffba0a0be69df3028fd5a7603 = $(`<div id="html_36f98cbffba0a0be69df3028fd5a7603" style="width: 100.0%; height: 100.0%;">Existing Hospital: Marienhaus Klinikum Saarlouis-Dillingen Standort Saarlouis</div>`)[0];
+                popup_8f02b61ef081c0ca5f630d9fd3b7f51e.setContent(html_36f98cbffba0a0be69df3028fd5a7603);
+            
+        
+
+        marker_ca8bd9d1fa66e77972cf16f806403cca.bindPopup(popup_8f02b61ef081c0ca5f630d9fd3b7f51e)
+        ;
+
+        
+    
+    
+                marker_ca8bd9d1fa66e77972cf16f806403cca.setIcon(icon_da8800c6b801864cb006502ddd98a211);
+            
+    
+            var marker_3fceae34747e16473e226e486d29394d = L.marker(
+                [49.2661267, 6.6829698],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_cd538aaa59de005d443159da83fa1f99 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7a0188e4b81727759a3f44019a57e65c = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_33aeec5bee2838114f64311151172b34 = $(`<div id="html_33aeec5bee2838114f64311151172b34" style="width: 100.0%; height: 100.0%;">Existing Hospital: MEDIAN Klinik Berus</div>`)[0];
+                popup_7a0188e4b81727759a3f44019a57e65c.setContent(html_33aeec5bee2838114f64311151172b34);
+            
+        
+
+        marker_3fceae34747e16473e226e486d29394d.bindPopup(popup_7a0188e4b81727759a3f44019a57e65c)
+        ;
+
+        
+    
+    
+                marker_3fceae34747e16473e226e486d29394d.setIcon(icon_cd538aaa59de005d443159da83fa1f99);
+            
+    
+            var marker_e5b966612256d5b331690b788f7cb008 = L.marker(
+                [49.3286239, 6.7149771],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_151b4d744772096796ea84a022688050 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c66a0937603212b6eace64ab8c7abc87 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_4ba4cbfb0ea0b8c37afe78e2d6f1c188 = $(`<div id="html_4ba4cbfb0ea0b8c37afe78e2d6f1c188" style="width: 100.0%; height: 100.0%;">Existing Hospital: St. Nikolaus-Hospital Wallerfangen</div>`)[0];
+                popup_c66a0937603212b6eace64ab8c7abc87.setContent(html_4ba4cbfb0ea0b8c37afe78e2d6f1c188);
+            
+        
+
+        marker_e5b966612256d5b331690b788f7cb008.bindPopup(popup_c66a0937603212b6eace64ab8c7abc87)
+        ;
+
+        
+    
+    
+                marker_e5b966612256d5b331690b788f7cb008.setIcon(icon_151b4d744772096796ea84a022688050);
+            
+    
+            var marker_5ba8575f7b2c4b2098aecd138da61dc6 = L.marker(
+                [49.308199, 7.351777],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_a5cb029a11a8be3c201f6b6a811ddc27 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_37628edbff9a0359f1aec9b3bc3ab711 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_372453c22d67fbb41e710a18007db3e3 = $(`<div id="html_372453c22d67fbb41e710a18007db3e3" style="width: 100.0%; height: 100.0%;">Existing Hospital: UKS - Universitätsklinikum des Saarlandes</div>`)[0];
+                popup_37628edbff9a0359f1aec9b3bc3ab711.setContent(html_372453c22d67fbb41e710a18007db3e3);
+            
+        
+
+        marker_5ba8575f7b2c4b2098aecd138da61dc6.bindPopup(popup_37628edbff9a0359f1aec9b3bc3ab711)
+        ;
+
+        
+    
+    
+                marker_5ba8575f7b2c4b2098aecd138da61dc6.setIcon(icon_a5cb029a11a8be3c201f6b6a811ddc27);
+            
+    
+            var marker_e07927d37afd9fdf7dc26fb7a9ecef12 = L.marker(
+                [49.2905518, 7.1131754],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_70729b4d889a0ba5bea0678a8998060d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_603b853874cd4124d390b2b05d29fbda = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_2f9e355b73617c608b22bbbeb722e3d7 = $(`<div id="html_2f9e355b73617c608b22bbbeb722e3d7" style="width: 100.0%; height: 100.0%;">Existing Hospital: Kreiskrankenhaus St. Ingbert GmbH</div>`)[0];
+                popup_603b853874cd4124d390b2b05d29fbda.setContent(html_2f9e355b73617c608b22bbbeb722e3d7);
+            
+        
+
+        marker_e07927d37afd9fdf7dc26fb7a9ecef12.bindPopup(popup_603b853874cd4124d390b2b05d29fbda)
+        ;
+
+        
+    
+    
+                marker_e07927d37afd9fdf7dc26fb7a9ecef12.setIcon(icon_70729b4d889a0ba5bea0678a8998060d);
+            
+    
+            var marker_f292f509f135bfd759444bb1c3004699 = L.marker(
+                [49.4539793, 7.1784916],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_9a0157d2cb8c6830363d49b6fcc27adc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e7cb4952d4a3fae6cf386e9129b647db = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_cd9acae18ca04f99074679141e4b311a = $(`<div id="html_cd9acae18ca04f99074679141e4b311a" style="width: 100.0%; height: 100.0%;">Existing Hospital: Marienhaus Klinikum St. Wendel-Otweiler</div>`)[0];
+                popup_e7cb4952d4a3fae6cf386e9129b647db.setContent(html_cd9acae18ca04f99074679141e4b311a);
+            
+        
+
+        marker_f292f509f135bfd759444bb1c3004699.bindPopup(popup_e7cb4952d4a3fae6cf386e9129b647db)
+        ;
+
+        
+    
+    
+                marker_f292f509f135bfd759444bb1c3004699.setIcon(icon_9a0157d2cb8c6830363d49b6fcc27adc);
+            
+    
+            var marker_3024cd8c99b5f7bfabb1332766b14636 = L.marker(
+                [49.454659, 7.186793],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_47bf32fef9b4bb0a0ec6fe4a877004da = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d49c1ea7ea3592df3d00acca5bb8f085 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_455ccca543ec5247130b0eae9444b540 = $(`<div id="html_455ccca543ec5247130b0eae9444b540" style="width: 100.0%; height: 100.0%;">Existing Hospital: Saarland-Heilstätten Gmbh  SHG-Kliniken Sonnenberg</div>`)[0];
+                popup_d49c1ea7ea3592df3d00acca5bb8f085.setContent(html_455ccca543ec5247130b0eae9444b540);
+            
+        
+
+        marker_3024cd8c99b5f7bfabb1332766b14636.bindPopup(popup_d49c1ea7ea3592df3d00acca5bb8f085)
+        ;
+
+        
+    
+    
+                marker_3024cd8c99b5f7bfabb1332766b14636.setIcon(icon_47bf32fef9b4bb0a0ec6fe4a877004da);
+            
+    
+            var marker_5f6e5f79d870e4f319907fee9d18fcb8 = L.marker(
+                [49.3383548, 6.8978759],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_a5441c69a7c15d69864ccae36d763939 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7d62f641efddbca0580ff7959e497b60 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_2ddbbc68b4f7730cc7585ac1a3b33fec = $(`<div id="html_2ddbbc68b4f7730cc7585ac1a3b33fec" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_7d62f641efddbca0580ff7959e497b60.setContent(html_2ddbbc68b4f7730cc7585ac1a3b33fec);
+            
+        
+
+        marker_5f6e5f79d870e4f319907fee9d18fcb8.bindPopup(popup_7d62f641efddbca0580ff7959e497b60)
+        ;
+
+        
+    
+    
+                marker_5f6e5f79d870e4f319907fee9d18fcb8.setIcon(icon_a5441c69a7c15d69864ccae36d763939);
+            
+    
+            var marker_d93577ac730318e31ba63a0446426bea = L.marker(
+                [49.3723456, 7.0663333],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_2cadb07451b332d3d59e54c6c5c350ed = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8b407c39b9ea69ab3e22422509e25f61 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_c41171b54c2432d20b1daa6dfbd0e852 = $(`<div id="html_c41171b54c2432d20b1daa6dfbd0e852" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_8b407c39b9ea69ab3e22422509e25f61.setContent(html_c41171b54c2432d20b1daa6dfbd0e852);
+            
+        
+
+        marker_d93577ac730318e31ba63a0446426bea.bindPopup(popup_8b407c39b9ea69ab3e22422509e25f61)
+        ;
+
+        
+    
+    
+                marker_d93577ac730318e31ba63a0446426bea.setIcon(icon_2cadb07451b332d3d59e54c6c5c350ed);
+            
+    
+            var marker_ad31f3a5bba6a1b33fe9ac099faefe43 = L.marker(
+                [49.3591157, 7.1094102],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_9760a663a5eef7c307a58d532f038bd4 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_16270d7f06bb80e4aa28978feb56f3af = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_77587775e3a134bf875388d58d74dcb8 = $(`<div id="html_77587775e3a134bf875388d58d74dcb8" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_16270d7f06bb80e4aa28978feb56f3af.setContent(html_77587775e3a134bf875388d58d74dcb8);
+            
+        
+
+        marker_ad31f3a5bba6a1b33fe9ac099faefe43.bindPopup(popup_16270d7f06bb80e4aa28978feb56f3af)
+        ;
+
+        
+    
+    
+                marker_ad31f3a5bba6a1b33fe9ac099faefe43.setIcon(icon_9760a663a5eef7c307a58d532f038bd4);
+            
+    
+            var marker_2b49671d59b05b628281086d11d709cb = L.marker(
+                [49.4758162, 7.0639047],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_695883e60ef60ffa17c8ad66ae1467f2 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2bbc121df43799d7576dc222916957f4 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_509f8486d25ae0d7f21555681eb197e3 = $(`<div id="html_509f8486d25ae0d7f21555681eb197e3" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_2bbc121df43799d7576dc222916957f4.setContent(html_509f8486d25ae0d7f21555681eb197e3);
+            
+        
+
+        marker_2b49671d59b05b628281086d11d709cb.bindPopup(popup_2bbc121df43799d7576dc222916957f4)
+        ;
+
+        
+    
+    
+                marker_2b49671d59b05b628281086d11d709cb.setIcon(icon_695883e60ef60ffa17c8ad66ae1467f2);
+            
+    
+            var marker_4cda71878452c5c32e650ff7477d1c5d = L.marker(
+                [49.3250705, 7.1274666],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_b225b761e555b9790dd517bd47c37c48 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_142f106ae727e902e3e85076485c30bf = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_08d16e36b0439d550430eaca4043a21b = $(`<div id="html_08d16e36b0439d550430eaca4043a21b" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_142f106ae727e902e3e85076485c30bf.setContent(html_08d16e36b0439d550430eaca4043a21b);
+            
+        
+
+        marker_4cda71878452c5c32e650ff7477d1c5d.bindPopup(popup_142f106ae727e902e3e85076485c30bf)
+        ;
+
+        
+    
+    
+                marker_4cda71878452c5c32e650ff7477d1c5d.setIcon(icon_b225b761e555b9790dd517bd47c37c48);
+            
+    
+            var marker_8d3bb801b6d84b7aa9a9c97a7d729cb0 = L.marker(
+                [49.3794581, 6.8129782],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_246549f679672d202b477e4cbda3c2d7 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_dce79e8e31b25cd0ad1ce88e0c204149 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_cdb10cbb6ebe75a50271e65c47f8766f = $(`<div id="html_cdb10cbb6ebe75a50271e65c47f8766f" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_dce79e8e31b25cd0ad1ce88e0c204149.setContent(html_cdb10cbb6ebe75a50271e65c47f8766f);
+            
+        
+
+        marker_8d3bb801b6d84b7aa9a9c97a7d729cb0.bindPopup(popup_dce79e8e31b25cd0ad1ce88e0c204149)
+        ;
+
+        
+    
+    
+                marker_8d3bb801b6d84b7aa9a9c97a7d729cb0.setIcon(icon_246549f679672d202b477e4cbda3c2d7);
+            
+    
+            var marker_f4fe6972e33e1deb9ac707391b629f02 = L.marker(
+                [49.4810208, 6.9274852],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_25042359c09b4e9fcd6b13217f4f42d3 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_cdfda4c96195c403583c5182e47cd561 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_0924908380770b4a9f830cbd03195bc9 = $(`<div id="html_0924908380770b4a9f830cbd03195bc9" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_cdfda4c96195c403583c5182e47cd561.setContent(html_0924908380770b4a9f830cbd03195bc9);
+            
+        
+
+        marker_f4fe6972e33e1deb9ac707391b629f02.bindPopup(popup_cdfda4c96195c403583c5182e47cd561)
+        ;
+
+        
+    
+    
+                marker_f4fe6972e33e1deb9ac707391b629f02.setIcon(icon_25042359c09b4e9fcd6b13217f4f42d3);
+            
+    
+            var marker_490a066d54af991ab1830c8cc1f77c2f = L.marker(
+                [49.5536792, 7.0134286],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_c9c77e199d4fdc1ea835f7d2ab2255dc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_30bbe6e8f7f7b014515f5aa159962a5d = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_20f8444ba9b0bca6fa47b212f2cf35ee = $(`<div id="html_20f8444ba9b0bca6fa47b212f2cf35ee" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_30bbe6e8f7f7b014515f5aa159962a5d.setContent(html_20f8444ba9b0bca6fa47b212f2cf35ee);
+            
+        
+
+        marker_490a066d54af991ab1830c8cc1f77c2f.bindPopup(popup_30bbe6e8f7f7b014515f5aa159962a5d)
+        ;
+
+        
+    
+    
+                marker_490a066d54af991ab1830c8cc1f77c2f.setIcon(icon_c9c77e199d4fdc1ea835f7d2ab2255dc);
+            
+    
+            var marker_5ed1f9297a53bf0765bf21181b4a77ee = L.marker(
+                [49.4817024, 7.0273095],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_9b966afb978feeba91add239583a8d3d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2d0d950b39426d667a86ea63838d214b = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_ba1a48cc5ae6670dc53e7790dc882a7b = $(`<div id="html_ba1a48cc5ae6670dc53e7790dc882a7b" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_2d0d950b39426d667a86ea63838d214b.setContent(html_ba1a48cc5ae6670dc53e7790dc882a7b);
+            
+        
+
+        marker_5ed1f9297a53bf0765bf21181b4a77ee.bindPopup(popup_2d0d950b39426d667a86ea63838d214b)
+        ;
+
+        
+    
+    
+                marker_5ed1f9297a53bf0765bf21181b4a77ee.setIcon(icon_9b966afb978feeba91add239583a8d3d);
+            
+    
+            var marker_f0c5da59038a3315faedf11c2eabdd9f = L.marker(
+                [49.5859876, 7.0857214],
+                {
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var icon_9d2d5e3fd120527f3e93d1ba48446a95 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "plus-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d892884190823bc3bf35fe1b8a7d8c51 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_34b051a6b6b2b0f8109d255d802ee247 = $(`<div id="html_34b051a6b6b2b0f8109d255d802ee247" style="width: 100.0%; height: 100.0%;">Predicted Hospital</div>`)[0];
+                popup_d892884190823bc3bf35fe1b8a7d8c51.setContent(html_34b051a6b6b2b0f8109d255d802ee247);
+            
+        
+
+        marker_f0c5da59038a3315faedf11c2eabdd9f.bindPopup(popup_d892884190823bc3bf35fe1b8a7d8c51)
+        ;
+
+        
+    
+    
+                marker_f0c5da59038a3315faedf11c2eabdd9f.setIcon(icon_9d2d5e3fd120527f3e93d1ba48446a95);
+            
+    
+        function geo_json_e2c2b1eceb51abf0a9facbea3da33071_styler(feature) {
+            switch(feature.id) {
+                default:
+                    return ;
+            }
+        }
+
+        function geo_json_e2c2b1eceb51abf0a9facbea3da33071_onEachFeature(feature, layer) {
+
+            layer.on({
+            });
+        };
+        var geo_json_e2c2b1eceb51abf0a9facbea3da33071 = L.geoJson(null, {
+                onEachFeature: geo_json_e2c2b1eceb51abf0a9facbea3da33071_onEachFeature,
+            
+                style: geo_json_e2c2b1eceb51abf0a9facbea3da33071_styler,
+            ...{
+}
+        });
+
+        function geo_json_e2c2b1eceb51abf0a9facbea3da33071_add (data) {
+            geo_json_e2c2b1eceb51abf0a9facbea3da33071
+                .addData(data);
+        }
+            geo_json_e2c2b1eceb51abf0a9facbea3da33071_add({"bbox": [NaN, NaN, NaN, NaN], "features": [], "type": "FeatureCollection"});
+
+        
+    
+            geo_json_e2c2b1eceb51abf0a9facbea3da33071.addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+        function geo_json_23fd69cff20107616ee2995f2996537b_styler(feature) {
+            switch(feature.id) {
+                default:
+                    return {"color": "black", "fillColor": "none", "opacity": 0.7, "weight": 3};
+            }
+        }
+
+        function geo_json_23fd69cff20107616ee2995f2996537b_onEachFeature(feature, layer) {
+
+            layer.on({
+            });
+        };
+        var geo_json_23fd69cff20107616ee2995f2996537b = L.geoJson(null, {
+                onEachFeature: geo_json_23fd69cff20107616ee2995f2996537b_onEachFeature,
+            
+                style: geo_json_23fd69cff20107616ee2995f2996537b_styler,
+            ...{
+}
+        });
+
+        function geo_json_23fd69cff20107616ee2995f2996537b_add (data) {
+            geo_json_23fd69cff20107616ee2995f2996537b
+                .addData(data);
+        }
+            geo_json_23fd69cff20107616ee2995f2996537b_add({"bbox": [6.357294590000038, 49.112251307000065, 7.402075500000024, 49.63943849900005], "features": [{"bbox": [6.711208500000055, 49.112251307000065, 7.136755760000028, 49.37766849900004], "geometry": {"coordinates": [[[6.949523819000035, 49.37406481600004], [6.9569845880000685, 49.37258089100004], [6.957055627000045, 49.365492852000045], [6.96612101900007, 49.356584757000064], [7.000148500000023, 49.35902199900005], [7.002737000000025, 49.35887749900007], [7.004496500000073, 49.35932849900007], [7.008076500000072, 49.359015999000064], [7.0099515000000565, 49.35902049900005], [7.013467000000048, 49.35902149900005], [7.016108000000031, 49.358535999000026], [7.022393000000022, 49.358756999000036], [7.020252000000028, 49.355007999000065], [7.0139180000000465, 49.34977749900003], [7.020373500000062, 49.34971649900007], [7.021449500000074, 49.35084799900005], [7.023929500000065, 49.35029449900003], [7.029605276000041, 49.34796414500005], [7.044164458000068, 49.349586825000074], [7.045399848000045, 49.34397123300005], [7.0519561700000395, 49.34564970900004], [7.0593516630000295, 49.34283843600008], [7.0622375000000375, 49.33044749900006], [7.069919046000052, 49.329617247000044], [7.073998204000077, 49.33628839200003], [7.073813253000026, 49.343279891000066], [7.086528500000043, 49.34675449900004], [7.09313006800005, 49.33979240100007], [7.107714358000067, 49.33870979800008], [7.1142410000000496, 49.33627299900007], [7.106950264000034, 49.33139967500006], [7.113864000000035, 49.32403299900005], [7.10685600000005, 49.31559149900005], [7.1150903070000595, 49.31249224800007], [7.117021500000021, 49.30952249900008], [7.1086926030000654, 49.30523890000006], [7.095610456000031, 49.302941350000026], [7.092608921000021, 49.29767581800007], [7.084424956000021, 49.29567228800005], [7.08576036900007, 49.28287637600005], [7.079218930000025, 49.28030396400004], [7.079806480000059, 49.27497116300003], [7.070838424000044, 49.274751783000056], [7.062578500000029, 49.27141749900005], [7.06444358400006, 49.259927807000054], [7.068372785000065, 49.25684354500004], [7.076220556000067, 49.25805566500003], [7.081617210000047, 49.25615665000004], [7.080384122000055, 49.25005920800004], [7.086735154000053, 49.24620762600006], [7.091448580000076, 49.24686848400006], [7.096788942000046, 49.25125090500006], [7.110658573000023, 49.25699624300006], [7.114540724000051, 49.25261522100004], [7.129124732000037, 49.24454212200004], [7.12946450000004, 49.24032599900005], [7.12309265600004, 49.22229107700008], [7.126588104000064, 49.21726842800007], [7.132425341000044, 49.21733471600004], [7.134475246000022, 49.21735799500004], [7.136755760000028, 49.21400652800003], [7.132425341000044, 49.21284273300006], [7.129656880000027, 49.212098697000044], [7.126697148000062, 49.206415271000026], [7.118972585000051, 49.20063110800004], [7.118019372000049, 49.19384132600004], [7.107030102000067, 49.18757330600005], [7.1120445000000245, 49.17621199900003], [7.126458891000027, 49.176318467000044], [7.1284347500000536, 49.17228834700006], [7.116298830000062, 49.16804386700005], [7.101069000000052, 49.15599799900008], [7.094360853000069, 49.15282379400003], [7.082349107000027, 49.15125851000005], [7.08314445700006, 49.14085195400003], [7.090204000000028, 49.131695999000044], [7.072578727000064, 49.12447990700008], [7.066576362000035, 49.11473922600004], [7.05756524100002, 49.112251307000065], [7.0515221350000274, 49.11338193900008], [7.046500183000035, 49.11710388900008], [7.045230500000059, 49.12859799900008], [7.0463027660000535, 49.13711568100007], [7.032712453000045, 49.156505147000075], [7.032815884000058, 49.16326596700003], [7.027893378000044, 49.170470831000046], [7.029435500000034, 49.17672749900004], [7.033372666000048, 49.18237393700008], [7.034149383000056, 49.19077628700006], [7.02375444300003, 49.18985616700007], [7.0205222010000625, 49.19259750900005], [7.015554500000064, 49.19127199900004], [7.01139673800003, 49.188562870000055], [7.008365683000022, 49.193532719000075], [6.99948100000006, 49.19446349900005], [6.99306232400005, 49.200423768000064], [6.97546090700007, 49.209077843000046], [6.96022772200007, 49.20371004700007], [6.953566500000022, 49.206109999000034], [6.944368500000053, 49.21383099900004], [6.937564383000051, 49.22194088300006], [6.922518080000032, 49.22306422200006], [6.9122348480000255, 49.21569132800005], [6.90101839700003, 49.213534252000045], [6.894613000000049, 49.210123999000075], [6.885114000000044, 49.21145949900006], [6.874277244000041, 49.21466563300004], [6.860297923000076, 49.22244944100004], [6.837607500000047, 49.21293299900003], [6.8511515990000476, 49.20084044300006], [6.850545000000068, 49.19351449900006], [6.858420318000071, 49.18613009900008], [6.861058000000071, 49.17854949900004], [6.858174218000045, 49.17509381600007], [6.845038361000036, 49.17266914800007], [6.845839500000068, 49.16026499900005], [6.846756242000026, 49.15752133600006], [6.843889000000047, 49.155497499000035], [6.836598500000036, 49.152220999000065], [6.83456700000005, 49.15131099900003], [6.79562904900007, 49.163100016000044], [6.789835500000038, 49.16638499900006], [6.773949500000072, 49.16751349900005], [6.761710123000057, 49.16505719700007], [6.747837000000061, 49.16603999900008], [6.738332691000039, 49.164150465000034], [6.729466500000058, 49.169655499000044], [6.719255000000032, 49.176828999000065], [6.711208500000055, 49.188341999000045], [6.723183000000063, 49.19877949900007], [6.728715000000022, 49.20307299900003], [6.731444500000066, 49.20595649900008], [6.725657500000068, 49.214372499000035], [6.723465500000032, 49.21882899900004], [6.739285505000055, 49.227514572000075], [6.769132268000021, 49.22395206700003], [6.779832422000027, 49.227359050000075], [6.7898131990000365, 49.23441384200004], [6.797197605000065, 49.23494067000007], [6.800317337000024, 49.23916355400007], [6.810634334000042, 49.24176990500007], [6.824110418000032, 49.25544863500005], [6.835738033000041, 49.25871443300008], [6.8289224030000355, 49.26733690100008], [6.819780000000037, 49.26971049900004], [6.827104086000077, 49.274639285000035], [6.855672500000026, 49.272106499000074], [6.856947500000047, 49.285791999000025], [6.864952323000068, 49.28931471000004], [6.863736802000062, 49.293626576000065], [6.86953130400002, 49.29345499400006], [6.87946177300006, 49.30027331800005], [6.876148623000063, 49.309442782000076], [6.881191983000065, 49.31723642000003], [6.8730485000000385, 49.325661499000034], [6.874922000000026, 49.32712699900003], [6.880203017000042, 49.33004469900004], [6.880563250000023, 49.33329968900006], [6.867388783000024, 49.346736743000065], [6.879487037000047, 49.34718596100004], [6.893516830000067, 49.35206611400008], [6.902161109000076, 49.35507271700004], [6.921703000000036, 49.36817149900003], [6.929995543000075, 49.36752542100004], [6.932753483000056, 49.37497970700008], [6.936851575000048, 49.373404175000076], [6.938014964000047, 49.376196777000075], [6.944278000000054, 49.37766849900004], [6.949523819000035, 49.37406481600004]]], "type": "Polygon"}, "id": "339", "properties": {"CNTR_CODE": "DE", "COAST_TYPE": 3, "LEVL_CODE": 3, "MOUNT_TYPE": 4, "NAME_LATN": "Regionalverband Saarbr\u00fccken", "NUTS_ID": "DEC01", "NUTS_NAME": "Regionalverband Saarbr\u00fccken", "URBN_TYPE": 1}, "type": "Feature"}, {"bbox": [6.357294590000038, 49.37219399900005, 6.96149431300006, 49.61342249900008], "geometry": {"coordinates": [[[6.891454000000067, 49.61342249900008], [6.895180217000075, 49.59806348300003], [6.904934899000068, 49.591426557000034], [6.910720379000054, 49.59440351500007], [6.919766694000032, 49.59496935900006], [6.932468902000039, 49.598632630000054], [6.95317443600004, 49.59564859200003], [6.9560425250000435, 49.59345341200003], [6.957020168000042, 49.58660241600006], [6.950932031000036, 49.57413049500008], [6.9505219510000416, 49.56735383900008], [6.96149431300006, 49.55939006300008], [6.955849024000031, 49.553071974000034], [6.9577978290000715, 49.543565759000046], [6.954071924000061, 49.53263695700008], [6.95545450000003, 49.51183549900003], [6.946441616000072, 49.510829252000065], [6.943567533000021, 49.50974386900003], [6.932468902000039, 49.50555230300006], [6.928764625000042, 49.50415324700003], [6.922826763000046, 49.504586474000064], [6.918797959000074, 49.50712054300004], [6.91018200000002, 49.50170349900003], [6.899442922000048, 49.49312166200008], [6.889150387000029, 49.487652129000026], [6.87517073500004, 49.48022225300008], [6.853730323000036, 49.482385226000076], [6.840452403000029, 49.47543897200006], [6.82347390700005, 49.46975683000005], [6.812270764000061, 49.47272138000005], [6.805739000000074, 49.46981449900005], [6.797548500000062, 49.458664999000064], [6.797511216000032, 49.45474606100004], [6.801336763000052, 49.450997776000065], [6.789563516000044, 49.43622347500008], [6.794833689000029, 49.431872129000055], [6.7952744660000235, 49.41905549200004], [6.798689000000024, 49.41583749900008], [6.791901864000067, 49.408786117000034], [6.783717326000044, 49.40493158500004], [6.76357887100005, 49.401711119000026], [6.753193929000076, 49.395643921000044], [6.746549000000073, 49.395151499000065], [6.742667071000028, 49.39546375700007], [6.718749760000037, 49.38419159700004], [6.716093066000042, 49.379126814000074], [6.697266500000069, 49.37219399900005], [6.693599294000023, 49.37492031800008], [6.6930757180000455, 49.38177241500006], [6.670945103000065, 49.389720545000046], [6.661953500000038, 49.398918999000045], [6.65095481000003, 49.40711846900007], [6.640715506000049, 49.41055022900008], [6.6285169790000396, 49.40911639400008], [6.621692391000067, 49.40451099300003], [6.608680191000076, 49.40206124300005], [6.600058298000022, 49.39792804000007], [6.585920593000026, 49.39953502600008], [6.5719854500000565, 49.41709287700007], [6.564400496000076, 49.41605564000008], [6.556986000000052, 49.419208499000035], [6.540518096000028, 49.43253866200007], [6.535296500000072, 49.43412449900006], [6.523433061000048, 49.43635621900006], [6.507799000000034, 49.44588099900005], [6.499367500000062, 49.450383499000054], [6.496876500000042, 49.45053499900007], [6.494784000000038, 49.45066199900003], [6.491887000000077, 49.45126199900005], [6.486288000000059, 49.451620999000056], [6.4848610000000235, 49.452484999000035], [6.484657500000026, 49.452607999000065], [6.46495393500004, 49.46548921500005], [6.455476679000071, 49.46314675600007], [6.445127009000032, 49.46747167900003], [6.4405495000000315, 49.466709499000046], [6.430541852000033, 49.47524159200003], [6.4219420640000635, 49.476059459000055], [6.4035855000000765, 49.46591649900006], [6.3761495500000365, 49.46445413600003], [6.3671075000000315, 49.46950699900003], [6.36732240200007, 49.487652129000026], [6.367488490000028, 49.50167098700007], [6.364542395000058, 49.50974386900003], [6.357294590000038, 49.52959862000006], [6.361044000000049, 49.53636799900005], [6.380052500000033, 49.551104999000074], [6.393294708000042, 49.54774016400006], [6.406703331000074, 49.547991565000075], [6.415717268000037, 49.54370202300004], [6.424509500000056, 49.547663999000065], [6.431444408000061, 49.54844915600006], [6.445304484000076, 49.54290373100008], [6.448961743000041, 49.54314583100006], [6.452529109000068, 49.53899676200007], [6.46284858000007, 49.54342627700004], [6.467011500000069, 49.54300949900005], [6.476566953000031, 49.54156703600006], [6.486506117000033, 49.53356383900007], [6.494216438000024, 49.530791976000046], [6.498598067000046, 49.53072678800004], [6.506591188000073, 49.53468462300003], [6.514927000000057, 49.53507999900006], [6.515177999000059, 49.52972618200005], [6.5177720740000495, 49.52821876200005], [6.523850254000024, 49.52924822700004], [6.538170501000025, 49.53881737700004], [6.554822607000062, 49.53632023400007], [6.563963000000058, 49.540557499000045], [6.575949966000053, 49.53255115500008], [6.582824131000052, 49.52051533300005], [6.590055061000044, 49.517391462000035], [6.600058298000022, 49.51768249600008], [6.604749748000074, 49.517818988000045], [6.609857582000075, 49.521233918000064], [6.607370124000056, 49.52813570200004], [6.619188748000056, 49.529283675000045], [6.619243625000024, 49.53600933800004], [6.633588695000071, 49.54160361100003], [6.643519725000033, 49.538479288000076], [6.650950000000023, 49.54337699900003], [6.650428500000032, 49.54951199900006], [6.652820000000077, 49.55093549900005], [6.658623573000057, 49.54436082500007], [6.662549994000074, 49.54314418000007], [6.683481354000037, 49.547776931000044], [6.690367723000065, 49.535860349000075], [6.700615138000046, 49.54223381800006], [6.7087595770000235, 49.55291263300006], [6.718721500000072, 49.55571099900004], [6.732453857000053, 49.55980338400008], [6.746459814000048, 49.55783656700004], [6.756877000000031, 49.56144099900007], [6.758438500000068, 49.562546499000064], [6.76148100000006, 49.564898999000036], [6.764581000000021, 49.56775799900004], [6.767500000000041, 49.56904349900003], [6.769689500000027, 49.56885499900005], [6.7721330000000535, 49.56913349900003], [6.77469300000007, 49.56951549900003], [6.778156000000024, 49.57022399900006], [6.781730000000039, 49.57253049900004], [6.787122000000068, 49.57622099900004], [6.789801500000067, 49.57988499900006], [6.793231500000047, 49.58138449900008], [6.798208500000044, 49.58634899900005], [6.8009305000000495, 49.586617999000055], [6.801663000000076, 49.58807449900007], [6.805731500000036, 49.58921599900003], [6.809572500000058, 49.59061199900003], [6.811864000000071, 49.59126299900004], [6.813442000000066, 49.591998999000054], [6.816894500000046, 49.590354999000056], [6.819766000000072, 49.58869249900005], [6.821160500000076, 49.58749449900006], [6.822301000000039, 49.58636099900008], [6.82426300000003, 49.58840649900003], [6.826457000000062, 49.58708149900008], [6.83289300000007, 49.58428199900004], [6.8354210000000535, 49.58293199900004], [6.839488460000041, 49.58732346100004], [6.839124500000025, 49.59263599900004], [6.846403656000064, 49.590570101000026], [6.85746785300006, 49.604841957000076], [6.864152000000047, 49.607867499000065], [6.870601789000034, 49.607888666000065], [6.878923174000022, 49.60189505300008], [6.8824450460000435, 49.60760352700004], [6.889689547000046, 49.607059563000064], [6.886187711000048, 49.61176247800006], [6.891454000000067, 49.61342249900008]]], "type": "Polygon"}, "id": "340", "properties": {"CNTR_CODE": "DE", "COAST_TYPE": 3, "LEVL_CODE": 3, "MOUNT_TYPE": 4, "NAME_LATN": "Merzig-Wadern", "NUTS_ID": "DEC02", "NUTS_NAME": "Merzig-Wadern", "URBN_TYPE": 2}, "type": "Feature"}, {"bbox": [6.917973932000052, 49.287300499000025, 7.292601500000046, 49.440671132000034], "geometry": {"coordinates": [[[7.227010750000034, 49.42950448500005], [7.235906516000057, 49.42797686000006], [7.252589000000057, 49.43146549900007], [7.261586154000042, 49.42418526100005], [7.272505050000063, 49.42383552800004], [7.290070000000071, 49.414705499000036], [7.292601500000046, 49.40822249900003], [7.2838759870000445, 49.402541401000065], [7.2747848940000495, 49.40179647300005], [7.261671000000035, 49.39708099900008], [7.254728431000046, 49.39643849500004], [7.2497841740000695, 49.38606106700007], [7.23982632600007, 49.38300142500003], [7.222110102000045, 49.370086238000056], [7.220210715000064, 49.36539304100006], [7.224043836000021, 49.360747444000026], [7.233732364000048, 49.36150678900003], [7.238660426000024, 49.35817598600005], [7.242316903000074, 49.34972790000006], [7.234097603000066, 49.34137856000007], [7.238115446000052, 49.33504577400004], [7.244508174000032, 49.330435590000036], [7.261786485000073, 49.32649617100003], [7.266678500000069, 49.32321949900006], [7.259859724000023, 49.318512104000035], [7.251327501000048, 49.31917455800004], [7.240747449000025, 49.314251762000026], [7.2469043680000595, 49.30804715700003], [7.240358797000056, 49.30370598600007], [7.182892000000038, 49.287300499000025], [7.180463903000032, 49.29144728600005], [7.187317603000054, 49.29648737800005], [7.184907272000032, 49.301538149000066], [7.187410000000057, 49.30552299900006], [7.171447621000027, 49.303434750000065], [7.16237013600005, 49.296893355000066], [7.154893805000029, 49.30068718000007], [7.139156379000042, 49.301590204000036], [7.132425341000044, 49.30474085000003], [7.124676230000034, 49.30836778400004], [7.117021500000021, 49.30952249900008], [7.1150903070000595, 49.31249224800007], [7.10685600000005, 49.31559149900005], [7.113864000000035, 49.32403299900005], [7.106950264000034, 49.33139967500006], [7.1142410000000496, 49.33627299900007], [7.107714358000067, 49.33870979800008], [7.09313006800005, 49.33979240100007], [7.086528500000043, 49.34675449900004], [7.073813253000026, 49.343279891000066], [7.073998204000077, 49.33628839200003], [7.069919046000052, 49.329617247000044], [7.0622375000000375, 49.33044749900006], [7.0593516630000295, 49.34283843600008], [7.0519561700000395, 49.34564970900004], [7.045399848000045, 49.34397123300005], [7.044164458000068, 49.349586825000074], [7.029605276000041, 49.34796414500005], [7.023929500000065, 49.35029449900003], [7.021449500000074, 49.35084799900005], [7.020373500000062, 49.34971649900007], [7.0139180000000465, 49.34977749900003], [7.020252000000028, 49.355007999000065], [7.022393000000022, 49.358756999000036], [7.016108000000031, 49.358535999000026], [7.013467000000048, 49.35902149900005], [7.0099515000000565, 49.35902049900005], [7.008076500000072, 49.359015999000064], [7.004496500000073, 49.35932849900007], [7.002737000000025, 49.35887749900007], [7.000148500000023, 49.35902199900005], [6.96612101900007, 49.356584757000064], [6.957055627000045, 49.365492852000045], [6.9569845880000685, 49.37258089100004], [6.949523819000035, 49.37406481600004], [6.944278000000054, 49.37766849900004], [6.939429008000047, 49.38237701600008], [6.937336459000051, 49.39366326100003], [6.931907575000025, 49.39698318000006], [6.9251002210000365, 49.397052460000054], [6.928605535000031, 49.40230687600007], [6.92129641300005, 49.40764451900003], [6.917973932000052, 49.41400326400003], [6.92302373900003, 49.41652980900005], [6.924350012000048, 49.42153252500003], [6.932237402000055, 49.42743419700008], [6.94167575900002, 49.42491193800004], [6.952657153000075, 49.42466946800005], [6.96631960600007, 49.431642088000046], [6.989319500000022, 49.43675649900007], [6.994353500000045, 49.437786499000026], [6.996988975000022, 49.43478950000008], [7.008646586000054, 49.43330320600006], [7.02550005300003, 49.42407875300006], [7.039963906000025, 49.42280976300003], [7.047105534000025, 49.42585206100006], [7.054659500000071, 49.416304499000034], [7.06077934800004, 49.40971915000006], [7.070062604000043, 49.41150999700005], [7.080534471000021, 49.41093527900006], [7.089918000000068, 49.41468499900003], [7.0919000000000665, 49.41514999900005], [7.0918005000000335, 49.41712849900006], [7.091599500000029, 49.41937349900007], [7.094087500000057, 49.421853499000065], [7.099016000000063, 49.421263999000075], [7.101176000000066, 49.42000499900007], [7.106412058000046, 49.42278346100005], [7.104330513000036, 49.42503223600005], [7.107427350000023, 49.427713493000056], [7.114897785000039, 49.42711909500008], [7.121050222000065, 49.42932888400003], [7.125477468000042, 49.42739730100004], [7.129787522000072, 49.429828505000046], [7.132425341000044, 49.42477483700003], [7.134871801000031, 49.42008731900006], [7.149936664000052, 49.41658967800004], [7.162741115000074, 49.41935095700006], [7.171782697000026, 49.42360705900006], [7.191144236000071, 49.42710685800006], [7.1956527590000405, 49.431976804000044], [7.2059340510000425, 49.434904792000054], [7.208795321000025, 49.440671132000034], [7.227010750000034, 49.42950448500005]]], "type": "Polygon"}, "id": "341", "properties": {"CNTR_CODE": "DE", "COAST_TYPE": 3, "LEVL_CODE": 3, "MOUNT_TYPE": 4, "NAME_LATN": "Neunkirchen", "NUTS_ID": "DEC03", "NUTS_NAME": "Neunkirchen", "URBN_TYPE": 2}, "type": "Feature"}, {"bbox": [6.5376836680000565, 49.21644869900007, 6.989319500000022, 49.50170349900003], "geometry": {"coordinates": [[[6.912014709000061, 49.48023003600008], [6.9243611780000265, 49.46944547900006], [6.932226511000067, 49.472058419000064], [6.935874000000069, 49.47147299900007], [6.943179626000074, 49.47411833900003], [6.956500825000035, 49.484974573000045], [6.963473632000046, 49.487350838000054], [6.968468612000038, 49.48604889200004], [6.970758395000075, 49.482772932000046], [6.968939904000024, 49.47911825800003], [6.972129917000075, 49.47585356400003], [6.970797729000026, 49.47064101500007], [6.977509939000072, 49.469271597000045], [6.972502121000048, 49.46029959600003], [6.977536370000053, 49.45156530500003], [6.985946776000048, 49.448061996000035], [6.989319500000022, 49.43675649900007], [6.96631960600007, 49.431642088000046], [6.952657153000075, 49.42466946800005], [6.94167575900002, 49.42491193800004], [6.932237402000055, 49.42743419700008], [6.924350012000048, 49.42153252500003], [6.92302373900003, 49.41652980900005], [6.917973932000052, 49.41400326400003], [6.92129641300005, 49.40764451900003], [6.928605535000031, 49.40230687600007], [6.9251002210000365, 49.397052460000054], [6.931907575000025, 49.39698318000006], [6.937336459000051, 49.39366326100003], [6.939429008000047, 49.38237701600008], [6.944278000000054, 49.37766849900004], [6.938014964000047, 49.376196777000075], [6.936851575000048, 49.373404175000076], [6.932753483000056, 49.37497970700008], [6.929995543000075, 49.36752542100004], [6.921703000000036, 49.36817149900003], [6.902161109000076, 49.35507271700004], [6.893516830000067, 49.35206611400008], [6.879487037000047, 49.34718596100004], [6.867388783000024, 49.346736743000065], [6.880563250000023, 49.33329968900006], [6.880203017000042, 49.33004469900004], [6.874922000000026, 49.32712699900003], [6.8730485000000385, 49.325661499000034], [6.881191983000065, 49.31723642000003], [6.876148623000063, 49.309442782000076], [6.87946177300006, 49.30027331800005], [6.86953130400002, 49.29345499400006], [6.863736802000062, 49.293626576000065], [6.864952323000068, 49.28931471000004], [6.856947500000047, 49.285791999000025], [6.855672500000026, 49.272106499000074], [6.827104086000077, 49.274639285000035], [6.819780000000037, 49.26971049900004], [6.8289224030000355, 49.26733690100008], [6.835738033000041, 49.25871443300008], [6.824110418000032, 49.25544863500005], [6.810634334000042, 49.24176990500007], [6.800317337000024, 49.23916355400007], [6.797197605000065, 49.23494067000007], [6.7898131990000365, 49.23441384200004], [6.779832422000027, 49.227359050000075], [6.769132268000021, 49.22395206700003], [6.739285505000055, 49.227514572000075], [6.723465500000032, 49.21882899900004], [6.719739000000061, 49.22110849900008], [6.706426564000026, 49.21665110600003], [6.694534474000022, 49.21644869900007], [6.688911088000054, 49.222694336000075], [6.6902250520000734, 49.23057393800008], [6.685461500000031, 49.243618499000036], [6.689639812000053, 49.24777415700004], [6.683725551000066, 49.25310831000007], [6.675616718000072, 49.25685710800008], [6.665999344000056, 49.254761673000075], [6.662083000000052, 49.25746749900003], [6.66109304400004, 49.26152704000003], [6.6670408920000455, 49.269493888000056], [6.66645918200004, 49.27665962700007], [6.668967274000067, 49.279972033000035], [6.660115000000076, 49.28366599900005], [6.6533695000000534, 49.28123699900004], [6.650697285000035, 49.28774083900004], [6.644641874000058, 49.28978063400007], [6.638956955000026, 49.29497682900006], [6.632268000000067, 49.295749999000066], [6.623676442000033, 49.302510624000035], [6.61483286400005, 49.30231886000007], [6.60393857300005, 49.31266315600004], [6.600058298000022, 49.315123638000046], [6.589121500000033, 49.32205799900004], [6.595595500000059, 49.33005749900008], [6.5860710700000595, 49.33629136900004], [6.578393500000061, 49.33496249900003], [6.576593185000036, 49.34043680800005], [6.565625993000026, 49.34858697000004], [6.56439712100007, 49.355571103000045], [6.569197000000031, 49.35788249900003], [6.580162900000062, 49.356108806000066], [6.588638867000043, 49.35144676800007], [6.599627750000025, 49.36700670500005], [6.594330891000027, 49.37060754500004], [6.584571475000075, 49.36977441600004], [6.584728582000025, 49.38504521200008], [6.575462690000052, 49.38905745000005], [6.564580157000023, 49.38893081900005], [6.552251000000069, 49.39421499900004], [6.551191305000032, 49.39955319200004], [6.540794500000061, 49.40124449900003], [6.5376836680000565, 49.408324503000074], [6.53885856200003, 49.41195203600006], [6.54755300100004, 49.41708950600008], [6.556986000000052, 49.419208499000035], [6.564400496000076, 49.41605564000008], [6.5719854500000565, 49.41709287700007], [6.585920593000026, 49.39953502600008], [6.600058298000022, 49.39792804000007], [6.608680191000076, 49.40206124300005], [6.621692391000067, 49.40451099300003], [6.6285169790000396, 49.40911639400008], [6.640715506000049, 49.41055022900008], [6.65095481000003, 49.40711846900007], [6.661953500000038, 49.398918999000045], [6.670945103000065, 49.389720545000046], [6.6930757180000455, 49.38177241500006], [6.693599294000023, 49.37492031800008], [6.697266500000069, 49.37219399900005], [6.716093066000042, 49.379126814000074], [6.718749760000037, 49.38419159700004], [6.742667071000028, 49.39546375700007], [6.746549000000073, 49.395151499000065], [6.753193929000076, 49.395643921000044], [6.76357887100005, 49.401711119000026], [6.783717326000044, 49.40493158500004], [6.791901864000067, 49.408786117000034], [6.798689000000024, 49.41583749900008], [6.7952744660000235, 49.41905549200004], [6.794833689000029, 49.431872129000055], [6.789563516000044, 49.43622347500008], [6.801336763000052, 49.450997776000065], [6.797511216000032, 49.45474606100004], [6.797548500000062, 49.458664999000064], [6.805739000000074, 49.46981449900005], [6.812270764000061, 49.47272138000005], [6.82347390700005, 49.46975683000005], [6.840452403000029, 49.47543897200006], [6.853730323000036, 49.482385226000076], [6.87517073500004, 49.48022225300008], [6.889150387000029, 49.487652129000026], [6.899442922000048, 49.49312166200008], [6.91018200000002, 49.50170349900003], [6.925200034000056, 49.488795837000055], [6.923439392000034, 49.487652129000026], [6.912014709000061, 49.48023003600008]]], "type": "Polygon"}, "id": "342", "properties": {"CNTR_CODE": "DE", "COAST_TYPE": 3, "LEVL_CODE": 3, "MOUNT_TYPE": 4, "NAME_LATN": "Saarlouis", "NUTS_ID": "DEC04", "NUTS_NAME": "Saarlouis", "URBN_TYPE": 1}, "type": "Feature"}, {"bbox": [7.062578500000029, 49.114907499000026, 7.402075500000024, 49.40822249900003], "geometry": {"coordinates": [[[7.368571939000049, 49.37332464800005], [7.367745899000056, 49.36374118500004], [7.395898500000044, 49.37204599900008], [7.400331271000027, 49.370854861000055], [7.402075500000024, 49.367718499000034], [7.394993457000055, 49.362921699000026], [7.400390320000042, 49.35574350500008], [7.393024872000069, 49.351809056000036], [7.401923701000044, 49.34617538400005], [7.399982000000023, 49.33669049900004], [7.391084484000032, 49.32703745800006], [7.378727237000021, 49.31912016100006], [7.380883452000035, 49.317340856000044], [7.391135585000029, 49.32043887900005], [7.394494000000066, 49.31635199900006], [7.390299096000035, 49.31067047400006], [7.381328325000027, 49.307017777000056], [7.379857359000027, 49.298940291000065], [7.384391893000043, 49.29334564200008], [7.374122281000041, 49.28261060800003], [7.366607077000026, 49.28229696200003], [7.364055302000054, 49.278606919000026], [7.353380707000042, 49.28272390300003], [7.33597373300006, 49.27881030400005], [7.336093606000077, 49.276524762000065], [7.343515178000075, 49.27314205000005], [7.343661024000028, 49.27033015100005], [7.338514824000072, 49.26381956200004], [7.326197515000047, 49.25804434500003], [7.327118037000048, 49.253518556000074], [7.323956491000047, 49.24837751000007], [7.316042174000074, 49.251558067000076], [7.312189000000046, 49.25702749900006], [7.307715169000062, 49.25606347200005], [7.304038397000056, 49.25188977300007], [7.301675075000048, 49.24392245700005], [7.2899228210000615, 49.238022003000026], [7.293398585000034, 49.23441954400005], [7.2899270690000435, 49.23042869200003], [7.302414648000024, 49.22260993100008], [7.297238866000043, 49.20528006500007], [7.303489822000074, 49.20494543800004], [7.320341000000042, 49.18949899900008], [7.337210454000058, 49.18458693900004], [7.336349038000037, 49.17586955100006], [7.343749943000034, 49.172045163000064], [7.351043980000043, 49.16255680900008], [7.362840919000064, 49.159207792000075], [7.36875550000002, 49.16145799900005], [7.362630467000031, 49.15588833500004], [7.362489500000038, 49.14863849900007], [7.362788000000023, 49.14521249900008], [7.359239892000062, 49.143678538000074], [7.328960127000073, 49.14430954300008], [7.315324753000027, 49.13809070700006], [7.310210500000039, 49.12943899900006], [7.304165000000069, 49.12418849900007], [7.293177000000071, 49.114907499000026], [7.283267486000057, 49.117146293000076], [7.282373754000048, 49.12366192200005], [7.264476389000038, 49.12315380800004], [7.249114000000077, 49.127292999000076], [7.243783044000054, 49.12967870500006], [7.208375067000077, 49.12422169900003], [7.198331000000053, 49.11523449900005], [7.195430323000039, 49.12208812800003], [7.185371189000023, 49.13041962300008], [7.163395000000037, 49.12685249900005], [7.158748500000058, 49.12063449900006], [7.1357705720000695, 49.12895986700005], [7.132425341000044, 49.131569529000046], [7.13159150000007, 49.13221999900003], [7.125564415000042, 49.14139055100003], [7.104057500000067, 49.138389999000026], [7.103695852000044, 49.144971801000054], [7.112188675000027, 49.15159044400008], [7.101069000000052, 49.15599799900008], [7.116298830000062, 49.16804386700005], [7.1284347500000536, 49.17228834700006], [7.126458891000027, 49.176318467000044], [7.1120445000000245, 49.17621199900003], [7.107030102000067, 49.18757330600005], [7.118019372000049, 49.19384132600004], [7.118972585000051, 49.20063110800004], [7.126697148000062, 49.206415271000026], [7.129656880000027, 49.212098697000044], [7.132425341000044, 49.21284273300006], [7.136755760000028, 49.21400652800003], [7.134475246000022, 49.21735799500004], [7.132425341000044, 49.21733471600004], [7.126588104000064, 49.21726842800007], [7.12309265600004, 49.22229107700008], [7.12946450000004, 49.24032599900005], [7.129124732000037, 49.24454212200004], [7.114540724000051, 49.25261522100004], [7.110658573000023, 49.25699624300006], [7.096788942000046, 49.25125090500006], [7.091448580000076, 49.24686848400006], [7.086735154000053, 49.24620762600006], [7.080384122000055, 49.25005920800004], [7.081617210000047, 49.25615665000004], [7.076220556000067, 49.25805566500003], [7.068372785000065, 49.25684354500004], [7.06444358400006, 49.259927807000054], [7.062578500000029, 49.27141749900005], [7.070838424000044, 49.274751783000056], [7.079806480000059, 49.27497116300003], [7.079218930000025, 49.28030396400004], [7.08576036900007, 49.28287637600005], [7.084424956000021, 49.29567228800005], [7.092608921000021, 49.29767581800007], [7.095610456000031, 49.302941350000026], [7.1086926030000654, 49.30523890000006], [7.117021500000021, 49.30952249900008], [7.124676230000034, 49.30836778400004], [7.132425341000044, 49.30474085000003], [7.139156379000042, 49.301590204000036], [7.154893805000029, 49.30068718000007], [7.16237013600005, 49.296893355000066], [7.171447621000027, 49.303434750000065], [7.187410000000057, 49.30552299900006], [7.184907272000032, 49.301538149000066], [7.187317603000054, 49.29648737800005], [7.180463903000032, 49.29144728600005], [7.182892000000038, 49.287300499000025], [7.240358797000056, 49.30370598600007], [7.2469043680000595, 49.30804715700003], [7.240747449000025, 49.314251762000026], [7.251327501000048, 49.31917455800004], [7.259859724000023, 49.318512104000035], [7.266678500000069, 49.32321949900006], [7.261786485000073, 49.32649617100003], [7.244508174000032, 49.330435590000036], [7.238115446000052, 49.33504577400004], [7.234097603000066, 49.34137856000007], [7.242316903000074, 49.34972790000006], [7.238660426000024, 49.35817598600005], [7.233732364000048, 49.36150678900003], [7.224043836000021, 49.360747444000026], [7.220210715000064, 49.36539304100006], [7.222110102000045, 49.370086238000056], [7.23982632600007, 49.38300142500003], [7.2497841740000695, 49.38606106700007], [7.254728431000046, 49.39643849500004], [7.261671000000035, 49.39708099900008], [7.2747848940000495, 49.40179647300005], [7.2838759870000445, 49.402541401000065], [7.292601500000046, 49.40822249900003], [7.296316162000039, 49.40488609300007], [7.295382164000046, 49.40070829500007], [7.298941500000069, 49.39851949900003], [7.291132226000059, 49.393979881000064], [7.290219930000035, 49.38950392600003], [7.301624486000037, 49.389089658000046], [7.302972000000068, 49.38742049900003], [7.31478422400005, 49.38453223000005], [7.322201306000068, 49.38050229800007], [7.35436538600004, 49.379748051000036], [7.355696918000035, 49.374942074000046], [7.368571939000049, 49.37332464800005]]], "type": "Polygon"}, "id": "546", "properties": {"CNTR_CODE": "DE", "COAST_TYPE": 3, "LEVL_CODE": 3, "MOUNT_TYPE": 4, "NAME_LATN": "Saarpfalz-Kreis", "NUTS_ID": "DEC05", "NUTS_NAME": "Saarpfalz-Kreis", "URBN_TYPE": 1}, "type": "Feature"}, {"bbox": [6.891454000000067, 49.40971915000006, 7.308632664000072, 49.63943849900005], "geometry": {"coordinates": [[[7.0598054340000544, 49.62981507900008], [7.079630000000066, 49.61208399900005], [7.088689828000042, 49.60032195800005], [7.101422849000073, 49.60442537500006], [7.108074000000045, 49.598756999000045], [7.120820861000027, 49.59586630900003], [7.132425341000044, 49.596410623000054], [7.150879632000056, 49.602884231000075], [7.161515500000064, 49.598546499000065], [7.165444000000036, 49.597050499000034], [7.168637500000045, 49.59714449900008], [7.173713000000021, 49.599067999000056], [7.172186250000038, 49.58679570500004], [7.1816824480000605, 49.58256515200003], [7.187614555000039, 49.57671974300007], [7.209999000000039, 49.57714849900003], [7.21328279100004, 49.57409030700006], [7.210368000000074, 49.568775499000026], [7.2141755310000235, 49.56598593700005], [7.2234589960000335, 49.565015868000046], [7.240829500000075, 49.568973999000036], [7.242870910000022, 49.573517268000046], [7.249489500000038, 49.574374499000044], [7.2556655610000576, 49.576183779000075], [7.262100560000022, 49.58322058300007], [7.268704000000071, 49.58408349900003], [7.262927985000033, 49.57534737200007], [7.263758000000053, 49.570614499000044], [7.2660450000000765, 49.56934749900006], [7.267723000000046, 49.568080999000074], [7.269163000000049, 49.56500649900005], [7.267481000000032, 49.56387749900006], [7.269212000000039, 49.56223399900006], [7.2710515000000555, 49.56225999900005], [7.27307200000007, 49.56227249900007], [7.274620000000027, 49.56107399900003], [7.273791388000063, 49.55276993100006], [7.27662250000003, 49.54862349900003], [7.277382712000076, 49.537776079000025], [7.290691029000072, 49.53476124400004], [7.30201500000004, 49.534811999000055], [7.299797688000069, 49.53091950600003], [7.308632664000072, 49.52428596900006], [7.30783150000002, 49.51995099900006], [7.301661796000076, 49.51894708000003], [7.29697057900006, 49.521675352000045], [7.293430791000048, 49.52135869700004], [7.287956116000032, 49.517958975000056], [7.287533726000049, 49.51269436000007], [7.283160254000052, 49.50974386900003], [7.282009500000072, 49.50580699900007], [7.287067000000036, 49.499062999000046], [7.283543946000066, 49.49602929800005], [7.280596226000057, 49.487652129000026], [7.279445878000047, 49.48438254900003], [7.296841000000029, 49.48354949900005], [7.299773500000072, 49.47880249900004], [7.301196000000061, 49.47672799900005], [7.303996500000039, 49.47555599900005], [7.304916500000047, 49.474195499000075], [7.299359500000037, 49.465951999000026], [7.288395288000061, 49.46133067000005], [7.286927500000047, 49.457689499000026], [7.276506289000054, 49.45583663700006], [7.272439731000077, 49.45202722700003], [7.247727514000076, 49.44579039600006], [7.254434765000042, 49.44031811200006], [7.251052743000059, 49.43456955000005], [7.252589000000057, 49.43146549900007], [7.235906516000057, 49.42797686000006], [7.227010750000034, 49.42950448500005], [7.208795321000025, 49.440671132000034], [7.2059340510000425, 49.434904792000054], [7.1956527590000405, 49.431976804000044], [7.191144236000071, 49.42710685800006], [7.171782697000026, 49.42360705900006], [7.162741115000074, 49.41935095700006], [7.149936664000052, 49.41658967800004], [7.134871801000031, 49.42008731900006], [7.132425341000044, 49.42477483700003], [7.129787522000072, 49.429828505000046], [7.125477468000042, 49.42739730100004], [7.121050222000065, 49.42932888400003], [7.114897785000039, 49.42711909500008], [7.107427350000023, 49.427713493000056], [7.104330513000036, 49.42503223600005], [7.106412058000046, 49.42278346100005], [7.101176000000066, 49.42000499900007], [7.099016000000063, 49.421263999000075], [7.094087500000057, 49.421853499000065], [7.091599500000029, 49.41937349900007], [7.0918005000000335, 49.41712849900006], [7.0919000000000665, 49.41514999900005], [7.089918000000068, 49.41468499900003], [7.080534471000021, 49.41093527900006], [7.070062604000043, 49.41150999700005], [7.06077934800004, 49.40971915000006], [7.054659500000071, 49.416304499000034], [7.047105534000025, 49.42585206100006], [7.039963906000025, 49.42280976300003], [7.02550005300003, 49.42407875300006], [7.008646586000054, 49.43330320600006], [6.996988975000022, 49.43478950000008], [6.994353500000045, 49.437786499000026], [6.989319500000022, 49.43675649900007], [6.985946776000048, 49.448061996000035], [6.977536370000053, 49.45156530500003], [6.972502121000048, 49.46029959600003], [6.977509939000072, 49.469271597000045], [6.970797729000026, 49.47064101500007], [6.972129917000075, 49.47585356400003], [6.968939904000024, 49.47911825800003], [6.970758395000075, 49.482772932000046], [6.968468612000038, 49.48604889200004], [6.963473632000046, 49.487350838000054], [6.956500825000035, 49.484974573000045], [6.943179626000074, 49.47411833900003], [6.935874000000069, 49.47147299900007], [6.932226511000067, 49.472058419000064], [6.9243611780000265, 49.46944547900006], [6.912014709000061, 49.48023003600008], [6.923439392000034, 49.487652129000026], [6.925200034000056, 49.488795837000055], [6.91018200000002, 49.50170349900003], [6.918797959000074, 49.50712054300004], [6.922826763000046, 49.504586474000064], [6.928764625000042, 49.50415324700003], [6.932468902000039, 49.50555230300006], [6.943567533000021, 49.50974386900003], [6.946441616000072, 49.510829252000065], [6.95545450000003, 49.51183549900003], [6.954071924000061, 49.53263695700008], [6.9577978290000715, 49.543565759000046], [6.955849024000031, 49.553071974000034], [6.96149431300006, 49.55939006300008], [6.9505219510000416, 49.56735383900008], [6.950932031000036, 49.57413049500008], [6.957020168000042, 49.58660241600006], [6.9560425250000435, 49.59345341200003], [6.95317443600004, 49.59564859200003], [6.932468902000039, 49.598632630000054], [6.919766694000032, 49.59496935900006], [6.910720379000054, 49.59440351500007], [6.904934899000068, 49.591426557000034], [6.895180217000075, 49.59806348300003], [6.891454000000067, 49.61342249900008], [6.892967565000049, 49.61611424200004], [6.904593160000047, 49.61433290200006], [6.919852333000051, 49.616483179000056], [6.92834431600005, 49.612565302000064], [6.930131415000062, 49.61408247300005], [6.928274060000035, 49.61754084300003], [6.932468902000039, 49.61694564600003], [6.935201716000051, 49.616557889000035], [6.935085500000071, 49.61942699900004], [6.936343441000076, 49.62525518900003], [6.932763000000023, 49.63102699900003], [6.9466818380000745, 49.63538685900005], [6.9494464460000245, 49.62682777500004], [6.952000933000022, 49.625659047000056], [6.9579495680000605, 49.62985367600004], [6.966861588000029, 49.63089704300006], [6.976493429000072, 49.63540413700008], [6.979826075000062, 49.63298691600005], [6.988648266000041, 49.633516686000064], [6.991535000000056, 49.63546799900007], [6.991029985000068, 49.62747595700006], [7.001023500000031, 49.63087999900006], [7.003021000000047, 49.63143749900007], [7.0052065000000425, 49.630757499000026], [7.008308500000055, 49.62948399900006], [7.012397500000077, 49.62835849900006], [7.017097000000035, 49.63103399900007], [7.020023000000037, 49.632925499000066], [7.0263025000000425, 49.638476999000034], [7.0279800000000705, 49.63943849900005], [7.0598054340000544, 49.62981507900008]]], "type": "Polygon"}, "id": "599", "properties": {"CNTR_CODE": "DE", "COAST_TYPE": 3, "LEVL_CODE": 3, "MOUNT_TYPE": 4, "NAME_LATN": "St. Wendel", "NUTS_ID": "DEC06", "NUTS_NAME": "St. Wendel", "URBN_TYPE": 2}, "type": "Feature"}], "type": "FeatureCollection"});
+
+        
+    
+    geo_json_23fd69cff20107616ee2995f2996537b.bindTooltip(
+    function(layer){
+    let div = L.DomUtil.create('div');
+    
+    let handleObject = feature => {
+        if (feature === null) {
+            return '';
+        } else if (typeof(feature)=='object') {
+            return JSON.stringify(feature);
+        } else {
+            return feature;
+        }
+    }
+    let fields = ["NUTS_NAME"];
+    let aliases = ["NUTS_NAME"];
+    let table = '<table>' +
+        String(
+        fields.map(
+        (v,i)=>
+        `<tr>
+            <th>${aliases[i]}</th>
+            
+            <td>${handleObject(layer.feature.properties[v])}</td>
+        </tr>`).join(''))
+    +'</table>';
+    div.innerHTML=table;
+    
+    return div
+    }
+    ,{
+  "sticky": true,
+  "className": "foliumtooltip",
+});
+                     
+    
+            geo_json_23fd69cff20107616ee2995f2996537b.addTo(map_3c93e2334395593e131a148d1da7a24f);
+        
+    
+            var layer_control_95d32efb8fc12201eb2105bdad2e2ae0_layers = {
+                base_layers : {
+                    "openstreetmap" : tile_layer_86fcbf5331eedc25fe0e2f1a3aa70b60,
+                },
+                overlays :  {
+                    "Saarland State Border" : geo_json_e2c2b1eceb51abf0a9facbea3da33071,
+                    "Saarland Districts" : geo_json_23fd69cff20107616ee2995f2996537b,
+                },
+            };
+            let layer_control_95d32efb8fc12201eb2105bdad2e2ae0 = L.control.layers(
+                layer_control_95d32efb8fc12201eb2105bdad2e2ae0_layers.base_layers,
+                layer_control_95d32efb8fc12201eb2105bdad2e2ae0_layers.overlays,
+                {
+  "position": "topright",
+  "collapsed": true,
+  "autoZIndex": true,
+}
+            ).addTo(map_3c93e2334395593e131a148d1da7a24f);
+
+        
+</script>
+</html>
