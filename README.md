@@ -88,7 +88,7 @@ src/
 3. **Output**
    - Results are saved in the `results/` directory
    - Interactive maps show both existing and predicted hospital locations
-   - Detailed metrics and analysis available in the evaluation module
+   - Detailed metrics and analysis are available in the evaluation module
 
 ### Development Workflow
 
