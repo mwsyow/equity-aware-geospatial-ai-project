@@ -34,7 +34,7 @@ src/
    - Travel Time Index: Assesses accessibility via road network
 
 2. **Equity Index System**
-   - Combines multiple health and accessibility indexes
+   - Combines multiple health and accessibility indices
    - Uses weighted combinations to compute composite equity scores
    - Considers both current and projected healthcare needs
 
