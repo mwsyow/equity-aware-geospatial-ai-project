@@ -675,6 +675,7 @@ class HospitalPlanner:
         max_beds: int = 1500,
         k: int = 10,
     ):
+        self.c2c_distance_threshold = c2c_distance_threshold
         """
         Run the hospital location optimization using CMA-ES.
         
