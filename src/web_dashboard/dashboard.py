@@ -16,76 +16,50 @@ st.set_page_config(page_title="Equity-Aware Geospatial AI Dashboard", layout="wi
 
 st.title("Equity-Aware Geospatial AI: Scenario Simulation Dashboard")
 
-# Custom centered spinner HTML
-spinner_html = """
-<div style="display: flex; justify-content: center; align-items: center; height: 400px;">
-  <div>
-    <svg width="60" height="60" viewBox="0 0 44 44" stroke="#1f77b4">
-      <g fill="none" fill-rule="evenodd" stroke-width="2">
-        <circle cx="22" cy="22" r="1">
-          <animate attributeName="r"
-            begin="0s" dur="1.8s"
-            values="1; 20"
-            calcMode="spline"
-            keyTimes="0; 1"
-            keySplines="0.165, 0.84, 0.44, 1"
-            repeatCount="indefinite" />
-          <animate attributeName="stroke-opacity"
-            begin="0s" dur="1.8s"
-            values="1; 0"
-            calcMode="spline"
-            keyTimes="0; 1"
-            keySplines="0.3, 0.61, 0.355, 1"
-            repeatCount="indefinite" />
-        </circle>
-        <circle cx="22" cy="22" r="1">
-          <animate attributeName="r"
-            begin="-0.9s" dur="1.8s"
-            values="1; 20"
-            calcMode="spline"
-            keyTimes="0; 1"
-            keySplines="0.165, 0.84, 0.44, 1"
-            repeatCount="indefinite" />
-          <animate attributeName="stroke-opacity"
-            begin="-0.9s" dur="1.8s"
-            values="1; 0"
-            calcMode="spline"
-            keyTimes="0; 1"
-            keySplines="0.3, 0.61, 0.355, 1"
-            repeatCount="indefinite" />
-        </circle>
-      </g>
-    </svg>
-  </div>
-</div>
-"""
+# Inject custom CSS for pointer cursor on selectbox
+st.markdown("""
+    <style>
+    /* Make the entire selectbox container show pointer on hover */
+    .stSelectbox:hover, .stSelectbox:hover * {
+        cursor: pointer !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Show the centered spinner
-spinner_placeholder = st.empty()
-spinner_placeholder.markdown(spinner_html, unsafe_allow_html=True)
-time.sleep(2)  # Duration of the loader
+st.markdown("""
+    <style>
+    /* Disable Streamlit's default widget transition/fade effect */
+    .element-container {
+        transition: none !important;
+        animation: none !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Replace spinner with the map
-spinner_placeholder.empty()
+# Dropdown for model selection
+model_files = {
+    "Main Model": "main_model_run.html",
+    "Policy Maker Model": "policy_maker_model.html",
+    "Deprivation Aware Model": "depravation_aware.html",
+    "Demand Based Model": "demand_based_model.html",
+    "Accessibility Based Model": "accessibility_based_model.html"
+}
 
-# Sidebar controls
-# st.sidebar.header("Scenario Controls")
+model_name = st.selectbox(
+    "Select Model to View Map",
+    options=list(model_files.keys()),
+    index=0,
+    format_func=lambda x: x
+)
 
-# Load real current hospitals
-df_current = get_hospital_df()
-df_current = df_current.rename(columns={"Lon": "lon", "Lat": "lat", "HospitalAddress": "name"})
-df_current["type"] = "Current"
-df_current["color"] = [[0, 0, 255] for _ in range(len(df_current))]  # Blue
+# Show spinner for a short time to simulate loading
+with st.spinner("Loading map..."):
+    time.sleep(0.5)  # Short delay for UX feedback
 
-# Path to your HTML file
-html_file_path = "src/web_dashboard/main_model_run.html"
-
-st.subheader("Hospital Locations (Current and Predicted)")
-
-# Read and display the HTML file
+selected_file = model_files[model_name]
+html_file_path = f"src/web_dashboard/{selected_file}"
 with open(html_file_path, 'r', encoding='utf-8') as f:
     html_content = f.read()
-
 components.html(html_content, height=600, scrolling=True)
 
 # Add a legend below the map
