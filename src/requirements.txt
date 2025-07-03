@@ -1,4 +1,5 @@
-
+streamlit
+pydeck
 #jupyter notebook
 bayesian-optimization==2.0.4
 geopandas==1.0.1
