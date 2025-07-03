@@ -4,18 +4,72 @@ import numpy as np
 import pydeck as pdk
 import sys
 import os
+import streamlit.components.v1 as components
+import time
 
 # Add the src directory to the path to allow imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'index_travel_accessibility')))
 from travel_time_and_centroid import get_hospital_df
 
+    
 st.set_page_config(page_title="Equity-Aware Geospatial AI Dashboard", layout="wide")
 
 st.title("Equity-Aware Geospatial AI: Scenario Simulation Dashboard")
 
+# Custom centered spinner HTML
+spinner_html = """
+<div style="display: flex; justify-content: center; align-items: center; height: 400px;">
+  <div>
+    <svg width="60" height="60" viewBox="0 0 44 44" stroke="#1f77b4">
+      <g fill="none" fill-rule="evenodd" stroke-width="2">
+        <circle cx="22" cy="22" r="1">
+          <animate attributeName="r"
+            begin="0s" dur="1.8s"
+            values="1; 20"
+            calcMode="spline"
+            keyTimes="0; 1"
+            keySplines="0.165, 0.84, 0.44, 1"
+            repeatCount="indefinite" />
+          <animate attributeName="stroke-opacity"
+            begin="0s" dur="1.8s"
+            values="1; 0"
+            calcMode="spline"
+            keyTimes="0; 1"
+            keySplines="0.3, 0.61, 0.355, 1"
+            repeatCount="indefinite" />
+        </circle>
+        <circle cx="22" cy="22" r="1">
+          <animate attributeName="r"
+            begin="-0.9s" dur="1.8s"
+            values="1; 20"
+            calcMode="spline"
+            keyTimes="0; 1"
+            keySplines="0.165, 0.84, 0.44, 1"
+            repeatCount="indefinite" />
+          <animate attributeName="stroke-opacity"
+            begin="-0.9s" dur="1.8s"
+            values="1; 0"
+            calcMode="spline"
+            keyTimes="0; 1"
+            keySplines="0.3, 0.61, 0.355, 1"
+            repeatCount="indefinite" />
+        </circle>
+      </g>
+    </svg>
+  </div>
+</div>
+"""
+
+# Show the centered spinner
+spinner_placeholder = st.empty()
+spinner_placeholder.markdown(spinner_html, unsafe_allow_html=True)
+time.sleep(2)  # Duration of the loader
+
+# Replace spinner with the map
+spinner_placeholder.empty()
+
 # Sidebar controls
-st.sidebar.header("Scenario Controls")
-num_hospitals = st.sidebar.slider("Number of Hospitals", min_value=1, max_value=20, value=2, step=1)
+# st.sidebar.header("Scenario Controls")
 
 # Load real current hospitals
 df_current = get_hospital_df()
@@ -23,30 +77,16 @@ df_current = df_current.rename(columns={"Lon": "lon", "Lat": "lat", "HospitalAdd
 df_current["type"] = "Current"
 df_current["color"] = [[0, 0, 255] for _ in range(len(df_current))]  # Blue
 
-# Simulate predicted hospitals (dummy for now)
-predicted_hospitals = pd.DataFrame({
-    'lat': [49.24 + 0.01*i for i in range(num_hospitals)],
-    'lon': [6.99 + 0.01*i for i in range(num_hospitals)],
-    'name': [f'Predicted {i+1}' for i in range(num_hospitals)],
-    'type': ['Predicted']*num_hospitals,
-    'color': [[0, 255, 0]]*num_hospitals  # Green
-})
+# Path to your HTML file
+html_file_path = "src/web_dashboard/main_model_run.html"
 
-# Combine for map
-df_map = pd.concat([df_current[['lat', 'lon', 'name', 'type', 'color']], predicted_hospitals], ignore_index=True)
-
-# Pydeck map
-layer = pdk.Layer(
-    'ScatterplotLayer',
-    df_map,
-    get_position='[lon, lat]',
-    get_color='color',
-    get_radius=200,
-    pickable=True
-)
-view_state = pdk.ViewState(latitude=49.25, longitude=7.0, zoom=10, pitch=0)
 st.subheader("Hospital Locations (Current and Predicted)")
-st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"text": "{name} ({type})"}))
+
+# Read and display the HTML file
+with open(html_file_path, 'r', encoding='utf-8') as f:
+    html_content = f.read()
+
+components.html(html_content, height=600, scrolling=True)
 
 # Add a legend below the map
 st.markdown("""
@@ -57,9 +97,6 @@ st.markdown("""
     <span>Predicted Hospital</span>
 </div>
 """, unsafe_allow_html=True)
-
-st.write("Predicted hospitals (dummy):")
-st.dataframe(predicted_hospitals)
 
 # Dummy metrics
 equity_index = np.random.uniform(0.5, 1.0)
