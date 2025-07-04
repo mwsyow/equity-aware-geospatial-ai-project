@@ -11,6 +11,50 @@ from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 
+# StrEnum compatibility for Python < 3.11
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
+
+
+def read_excel_with_engine_detection(file_path):
+    """
+    Read Excel file with automatic engine detection.
+    Tries openpyxl first for .xlsx files, then direct xlrd for .xls files.
+    """
+    try:
+        # Try openpyxl first (for .xlsx files)
+        return pd.read_excel(file_path, engine="openpyxl")
+    except Exception as e1:
+        try:
+            # Try direct xlrd import for .xls files
+            import xlrd
+            workbook = xlrd.open_workbook(file_path)
+            sheet = workbook.sheet_by_index(0)
+            
+            # Convert to pandas DataFrame
+            data = []
+            for row_idx in range(sheet.nrows):
+                row_data = []
+                for col_idx in range(sheet.ncols):
+                    cell_value = sheet.cell_value(row_idx, col_idx)
+                    row_data.append(cell_value)
+                data.append(row_data)
+            
+            # Create DataFrame with headers from first row
+            if data:
+                df = pd.DataFrame(data[1:], columns=data[0])
+                return df
+            else:
+                return pd.DataFrame()
+                
+        except Exception as e2:
+            # If both fail, raise the first error
+            raise e1
+
 
 # -----------------------------------------------------------------------------------------
 # Configurations
@@ -91,7 +135,7 @@ def get_TAI_scaled_for_model(model_name: str) -> pd.DataFrame:
         raise ValueError(f"Invalid model name. Choose from: {list(MODEL_PATHS.keys())}")
 
     path = MODEL_PATHS[model_name]
-    df = pd.read_excel(path)
+    df = read_excel_with_engine_detection(path)
     df["district_code"] = df["district"].apply(lambda d: SAARLAND_AGS.get(d, d))
     df = df[["district_code", "mean_travel_time_mins_scaled"]].rename(
         columns={"mean_travel_time_mins_scaled": model_name}
@@ -123,18 +167,21 @@ def accessibility_score():
     """
 
     MODEL_PATHS = {
-        "status_quo_model": "evaluation/data/processed/RES_status_quo_model_travel_time_from_sample_to_hospital.xlsx",
-        "policy_maker_model": "evaluation/data/processed/RES_policy_maker_model_travel_time_from_sample_to_hospital.xlsx",
-        "demand_based_model": "evaluation/data/processed/RES_demand_based_model_travel_time_from_sample_to_hospital.xlsx",
-        "deprivation_aware_model": "evaluation/data/processed/RES_deprivation_aware_model_travel_time_from_sample_to_hospital.xlsx",
-        "accessibility_based_model": "evaluation/data/processed/RES_accessibility_based_model_travel_time_from_sample_to_hospital.xlsx",
-        "main_model": "evaluation/data/processed/RES_main_model_travel_time_from_sample_to_hospital.xlsx",
+        "status_quo_model": "src/evaluation/data/processed/RES_status_quo_model_travel_time_from_sample_to_hospital.xlsx",
+        "policy_maker_model": "src/evaluation/data/processed/RES_policy_maker_model_travel_time_from_sample_to_hospital.xlsx",
+        "demand_based_model": "src/evaluation/data/processed/RES_demand_based_model_travel_time_from_sample_to_hospital.xlsx",
+        "deprivation_aware_model": "src/evaluation/data/processed/RES_deprivation_aware_model_travel_time_from_sample_to_hospital.xlsx",
+        "accessibility_based_model": "src/evaluation/data/processed/RES_accessibility_based_model_travel_time_from_sample_to_hospital.xlsx",
+        "main_model": "src/evaluation/data/processed/RES_main_model_travel_time_from_sample_to_hospital.xlsx",
     }
+
+    # Ensure the processed directory exists
+    os.makedirs("src/evaluation/data/processed", exist_ok=True)
 
     results = []
 
     for model_name, path in MODEL_PATHS.items():
-        df = pd.read_excel(path)
+        df = read_excel_with_engine_detection(path)
         mean_tt = df["travel_time_minutes"].mean()
         median_tt = df["travel_time_minutes"].median()
         p95_tt = df["travel_time_minutes"].quantile(0.95)
@@ -149,7 +196,7 @@ def accessibility_score():
     results_df = pd.DataFrame(results).round(2)
     
     # Save to Excel
-    output_path = "evaluation/data/processed/accessibility_score.xlsx"
+    output_path = "src/evaluation/data/processed/accessibility_score.xlsx"
     results_df.to_excel(output_path, index=False)
 
     print("✅ Saved accessibility score (mean, median, p95) to:")
@@ -236,8 +283,8 @@ def find_nearest_hospitals(HOSPITAL_DATA):
     """
     
     # Load sample points and hospital data
-    sample_points = pd.read_excel(SAARLAND_DISTRICTS_SAMPLE_POINTS_PATH)
-    hospitals = pd.read_excel(HOSPITAL_DATA)
+    sample_points = read_excel_with_engine_detection(SAARLAND_DISTRICTS_SAMPLE_POINTS_PATH)
+    hospitals = read_excel_with_engine_detection(HOSPITAL_DATA)
 
     # Ensure valid coordinates
     sample_points = sample_points.dropna(subset=["Lat", "Lon"])
@@ -284,8 +331,11 @@ def get_travel_time(MODEL_NAME):
     Gets the travel time by cars in minutes  - FROM a sample point TO the nearest hospital
     """
     
+    # Ensure the processed directory exists
+    os.makedirs("src/evaluation/data/processed", exist_ok=True)
+    
     # Load the sample points + nearest hospital coordinates
-    df = pd.read_excel(NEAREST_HOSPITALS_TO_SAMPLE_POINTS_PATH)  # Must include 'district', 'sample_point_lat', 'sample_point_lon', 'hospital_lat', 'hospital_lon'
+    df = read_excel_with_engine_detection(NEAREST_HOSPITALS_TO_SAMPLE_POINTS_PATH)  # Must include 'district', 'sample_point_lat', 'sample_point_lon', 'hospital_lat', 'hospital_lon'
 
     results = []
 
@@ -336,7 +386,7 @@ def get_travel_time(MODEL_NAME):
 
     # Save to Excel
     out_df = pd.DataFrame(results)
-    out_df.to_excel( f"equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\{MODEL_NAME}_travel_time_from_sample_to_hospital.xlsx", index=False)
+    out_df.to_excel(f"src/evaluation/data/processed/{MODEL_NAME}_travel_time_from_sample_to_hospital.xlsx", index=False)
     
     print("*"*80)
     print("✅ Generated Travel times from sample points to the nearest hospitals")
@@ -347,8 +397,11 @@ def calc_metrics_from_travel_time(MODEL_NAME):
     Calculates and saves the MEAN, MEDIAN and 95th PERCENTILE of the travel time for EACH district.
     """
 
+    # Ensure the processed directory exists
+    os.makedirs("src/evaluation/data/processed", exist_ok=True)
+
     # Load the data
-    df = pd.read_excel(f"equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\{MODEL_NAME}_travel_time_from_sample_to_hospital.xlsx")
+    df = read_excel_with_engine_detection(f"src/evaluation/data/processed/{MODEL_NAME}_travel_time_from_sample_to_hospital.xlsx")
 
     # Group by district and compute metrics
     summary_df = df.groupby("district")["travel_time_minutes"].agg([
@@ -365,7 +418,7 @@ def calc_metrics_from_travel_time(MODEL_NAME):
 
     # Save result
     # summary_df.to_excel(CALCULATED_METRICS_FOR_TRAVEL_TIME_PATH, index=False)
-    summary_df.to_excel(f"equity-aware-geospatial-ai-project\\src\\evaluation\\data\\processed\\{MODEL_NAME}.xlsx", index=False)
+    summary_df.to_excel(f"src/evaluation/data/processed/{MODEL_NAME}.xlsx", index=False)
 
     print("*"*80)
     print(f"✅ Calculated statistics of the travel time for EACH district for {MODEL_NAME}")

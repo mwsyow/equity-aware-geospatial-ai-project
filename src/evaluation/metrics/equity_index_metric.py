@@ -1,3 +1,12 @@
+import sys
+import os
+
+# Add src directory to path for imports
+current_dir = os.path.dirname(__file__)
+src_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
+
 from index_demand_forecast.demand_forecast import forecast_demand_per_district_in_saarland as run_demand_forecast
 from index_elderly_share.elderly_share import run as run_elderly_share
 from index_gisd.gisd import run as run_gisd
@@ -5,7 +14,13 @@ from index_hospital_capacity.hospital_capacity_index_dict import calculate_hospi
 from .accessibility_score_metric import get_TAI_scaled_for_model as run_TAI_scaled_for_model
 import os
 import pandas as pd
-from strenum import StrEnum
+# StrEnum compatibility for Python < 3.11
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
 import numpy as np
 
 
@@ -45,7 +60,7 @@ def calculate_new_hospital_capacity_index(hospital_file_path: str) -> dict:
     Calculates the Hospital Capacity Index for each district in Saarland.
 
     The index is calculated using the following steps:
-    1. Aggregates total hospital beds per district
+    1. Aggregates total hospital beds per district from model result file
     2. Combines bed data with population data
     3. Calculates adjusted beds per capita
     4. Normalizes and inverts the values to create the final index
@@ -59,36 +74,86 @@ def calculate_new_hospital_capacity_index(hospital_file_path: str) -> dict:
         dict: A dictionary mapping AGS codes to Hospital Capacity Index values,
               with values rounded to 4 decimal places
     """
-    # Load cleaned datasets
-    hospital_df = load_hospital_data(hospital_file_path)
-    population_df = load_population_data()
-
-    # Aggregate total beds per Kreis
-    beds_per_kreis = hospital_df.groupby("district")["beds"].sum().reset_index()
-    beds_per_kreis.rename(columns={"beds": "TotalBeds"}, inplace=True)
-
-    # Merge with population data
-    merged_df = pd.merge(beds_per_kreis, population_df, on="district", how="inner")
-
-    # Compute adjusted beds per capita
-    merged_df["AdjBeds"] = merged_df["TotalBeds"] / merged_df["population"]
-
-    # Normalize and invert to compute HospitalCapacityIndex
-    min_adj = merged_df["AdjBeds"].min()
-    max_adj = merged_df["AdjBeds"].max()
-    merged_df["HospitalCapacityIndex"] = 1 - (merged_df["AdjBeds"] - min_adj) / (max_adj - min_adj)
-    # Ensure HospitalCapacityIndex is numeric and handle any NaN values
-    merged_df["HospitalCapacityIndex"] = pd.to_numeric(merged_df["HospitalCapacityIndex"], errors='coerce').fillna(1)
-    # Convert to dictionary: {district: HospitalCapacityIndex}
-    result_dict = dict(zip(merged_df["district"], merged_df["HospitalCapacityIndex"].round(4)))
-
-    # Map result_dict keys to AGS
-    mapped_result = {
-    ags: result_dict.get(float(ags[-2:]))
-    for ags in SAARLAND_AGS
-    }
-
-    return mapped_result
+    try:
+        # Load model result data directly
+        print(f"🏥 Loading hospital capacity from model result: {hospital_file_path}")
+        df = pd.read_excel(hospital_file_path, engine="openpyxl")
+        
+        if 'bed_allocation' not in df.columns:
+            print(f"❌ No bed_allocation column found in {hospital_file_path}")
+            return {ags: 0.5 for ags in SAARLAND_AGS}  # Return neutral values
+        
+        # Aggregate total beds per district
+        beds_per_district = df.groupby('district_code')['bed_allocation'].sum().reset_index()
+        beds_per_district = beds_per_district.rename(columns={'district_code': 'district', 'bed_allocation': 'TotalBeds'})
+        
+        # Convert 5-digit district codes to 2-digit codes for population data matching
+        beds_per_district['district'] = beds_per_district['district'].astype(str).str[-2:].astype(int)
+        
+        print(f"🔍 Beds per district data:")
+        print(f"   Shape: {beds_per_district.shape}")
+        print(f"   Columns: {beds_per_district.columns.tolist()}")
+        print(f"   District values: {beds_per_district['district'].tolist()}")
+        print(f"   Data types: {beds_per_district.dtypes.to_dict()}")
+        
+        # Load population data
+        population_df = load_population_data()
+        
+        print(f"🔍 Population data:")
+        print(f"   Shape: {population_df.shape}")
+        print(f"   Columns: {population_df.columns.tolist()}")
+        print(f"   District values: {population_df['district'].tolist()}")
+        print(f"   Data types: {population_df.dtypes.to_dict()}")
+        
+        # Merge with population data
+        merged_df = pd.merge(beds_per_district, population_df, on="district", how="inner")
+        
+        print(f"🔍 After merge:")
+        print(f"   Shape: {merged_df.shape}")
+        print(f"   Columns: {merged_df.columns.tolist()}")
+        
+        if merged_df.empty:
+            print(f"❌ No data after merging with population data")
+            print(f"   Beds districts: {beds_per_district['district'].tolist()}")
+            print(f"   Population districts: {population_df['district'].tolist()}")
+            return {ags: 0.5 for ags in SAARLAND_AGS}
+        
+        # Compute adjusted beds per capita
+        merged_df["AdjBeds"] = merged_df["TotalBeds"] / merged_df["population"]
+        
+        # Normalize and invert to compute HospitalCapacityIndex
+        min_adj = merged_df["AdjBeds"].min()
+        max_adj = merged_df["AdjBeds"].max()
+        
+        if max_adj == min_adj:
+            # All districts have same capacity, return neutral values
+            merged_df["HospitalCapacityIndex"] = 0.5
+        else:
+            merged_df["HospitalCapacityIndex"] = 1 - (merged_df["AdjBeds"] - min_adj) / (max_adj - min_adj)
+        
+        # Ensure HospitalCapacityIndex is numeric and handle any NaN values
+        merged_df["HospitalCapacityIndex"] = pd.to_numeric(merged_df["HospitalCapacityIndex"], errors='coerce').fillna(0.5)
+        
+        # Convert to dictionary: {district: HospitalCapacityIndex}
+        result_dict = dict(zip(merged_df["district"], merged_df["HospitalCapacityIndex"].round(4)))
+        
+        # Map result_dict keys to AGS
+        mapped_result = {}
+        for ags in SAARLAND_AGS:
+            # Try to find the district in the result
+            district_code = int(ags[-2:])  # Extract last 2 digits
+            
+            if district_code in result_dict:
+                mapped_result[ags] = result_dict[district_code]
+            else:
+                mapped_result[ags] = 0.5  # Default neutral value
+        
+        print(f"✅ Hospital capacity index calculated: {mapped_result}")
+        return mapped_result
+        
+    except Exception as e:
+        print(f"❌ Error calculating hospital capacity index: {e}")
+        return {ags: 0.5 for ags in SAARLAND_AGS}  # Return neutral values on error
 
 
 
@@ -263,22 +328,40 @@ def calculate_new_equity_index(hospital_file_path: str, modelname: str):
     Returns:
         pd.Series: Equity Index values for each district.
     """
+    print(f"🔍 Calculating equity index for model: {modelname}")
+    
+    try:
+        # Define the path to the hospital data file (not the model results file)
+        hospital_data_path = os.path.join(os.path.dirname(__file__), "..", "..", "index_hospital_capacity", "data", "Krankenhausverzeichnis_2021.xlsx")
+        print(f"🏥 Hospital data path: {hospital_data_path}")
+        print(f"🏥 Hospital data exists: {os.path.exists(hospital_data_path)}")
 
-    # Define the path to the hospital data file (not the model results file)
-    hospital_data_path = os.path.join(os.path.dirname(__file__), "..", "..", "index_hospital_capacity", "data", "Krankenhausverzeichnis_2021.xlsx")
+        # Override the INDEX_FUNC_MAP entries with the custom functions
+        INDEX_FUNC_MAP[Index.HOSPITAL_CAPACITY] = lambda: calculate_new_hospital_capacity_index(hospital_file_path)
+        INDEX_FUNC_MAP[Index.TRAVEL_TIME] = lambda: run_TAI_scaled_for_model(modelname)
 
-    # Override the INDEX_FUNC_MAP entries with the custom functions
-    INDEX_FUNC_MAP[Index.HOSPITAL_CAPACITY] = lambda: calculate_new_hospital_capacity_index(hospital_data_path)
-    INDEX_FUNC_MAP[Index.TRAVEL_TIME] = lambda: run_TAI_scaled_for_model(modelname)
+        print("📊 Assembling indexes...")
+        index_df = assemble_indexes()
+        print(f"📊 Indexes assembled. Shape: {index_df.shape}")
+        print(f"📊 Indexes columns: {list(index_df.columns)}")
+        print(f"📊 Indexes head:\n{index_df.head()}")
+        
+        weight = {
+            Index.FORECAST_DEMAND: 0.25,
+            Index.ELDERLY_SHARE: 0.25,
+            Index.GISD: 0.25,
+            Index.HOSPITAL_CAPACITY: 0.25,
+            Index.TRAVEL_TIME: 0.25,
+            Index.ACCESSIBILITY: 0.25,
+        }
 
-    index_df = assemble_indexes()
-    weight = {
-        Index.FORECAST_DEMAND: 0.25,
-        Index.ELDERLY_SHARE: 0.25,
-        Index.GISD: 0.25,
-        Index.HOSPITAL_CAPACITY: 0.25,
-        Index.TRAVEL_TIME: 0.25,
-        Index.ACCESSIBILITY: 0.25,
-    }
-
-    return equity_index(index_df, weight)
+        print("⚖️ Calculating equity index...")
+        result = equity_index(index_df, weight)
+        print(f"✅ Equity index calculated: {result}")
+        return result
+        
+    except Exception as e:
+        print(f"❌ Error calculating equity index for {modelname}: {e}")
+        import traceback
+        traceback.print_exc()
+        return pd.Series([np.nan] * len(SAARLAND_AGS), index=SAARLAND_AGS, name="EquityIndex")

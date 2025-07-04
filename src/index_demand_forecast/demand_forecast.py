@@ -3,7 +3,13 @@ import numpy as np
 import pandas as pd
 
 from statsmodels.tsa.arima.model import ARIMA
-from strenum import StrEnum
+# StrEnum compatibility for Python < 3.11
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 

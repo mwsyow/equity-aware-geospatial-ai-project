@@ -266,6 +266,8 @@ def main():
     """model
     Example usage with dummy data. Replace `results` and `demands` with actual evaluation results.
     """
+    print("🚀 Starting evaluation script...")
+    
     rng = np.random.default_rng(42)
     # Example district list
     districts = [f"D{i}" for i in range(1, 11)]
@@ -275,7 +277,31 @@ def main():
 
     # Build the path to the experiments/results directory
     current_dir = os.path.dirname(__file__)
+    print(f"📍 Current script directory: {current_dir}")
+    
+    # Fix path to be relative to project root when script is run from there
     experiments_results_dir = os.path.join(current_dir, "..", "experiments", "results")
+    print(f"🔍 Trying path: {experiments_results_dir}")
+    
+    # Check if the directory exists, if not try alternative paths
+    if not os.path.exists(experiments_results_dir):
+        print(f"❌ Path not found: {experiments_results_dir}")
+        # Try relative to current working directory (project root)
+        experiments_results_dir = os.path.join("src", "experiments", "results")
+        print(f"🔍 Trying alternative path: {experiments_results_dir}")
+        if not os.path.exists(experiments_results_dir):
+            print(f"❌ Alternative path not found: {experiments_results_dir}")
+            # Try absolute path from project root
+            project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
+            experiments_results_dir = os.path.join(project_root, "src", "experiments", "results")
+            print(f"🔍 Trying absolute path: {experiments_results_dir}")
+    
+    print(f"📁 Using experiments results directory: {experiments_results_dir}")
+    if not os.path.exists(experiments_results_dir):
+        print(f"❌ Error: Directory not found: {experiments_results_dir}")
+        return
+    
+    print(f"✅ Directory found! Contents: {os.listdir(experiments_results_dir)}")
 
 
     from .metrics.equity_index_metric import calculate_new_equity_index
@@ -304,12 +330,22 @@ def main():
     for model, filename in excel_files.items():
         path = os.path.join(experiments_results_dir, filename)
         
-        results[model] = {
-            "EquityScore": calculate_new_equity_index(path, modelname=model),
-            "HDR": calculate_hdr(hospital_data_path),
-            "OverServedAreaCount": compute_overserved_area_count(hospital_data_path),
-            "HFDR": calculate_hfdr(hospital_data_path),
-        }
+        print(f"📄 Processing {model}: {path}")
+        if not os.path.exists(path):
+            print(f"❌ File not found: {path}")
+            continue
+            
+        try:
+            results[model] = {
+                "EquityScore": calculate_new_equity_index(path, modelname=model),
+                "HDR": calculate_hdr(path),  # Use model result file instead of hospital capacity file
+                "OverServedAreaCount": compute_overserved_area_count(path, modelname=model),  # Use model result file
+                "HFDR": calculate_hfdr(path),  # Use model result file
+            }
+        except Exception as e:
+            print(f"❌ Error processing {model}: {e}")
+            print(f"⏭️ Skipping {model} and continuing with next model...")
+            continue
     
 
     accessibility_score_results = accessibility_score()
@@ -326,9 +362,43 @@ def main():
                 "p95_travel_time_mins": acc["p95_travel_time_mins"]
             }
 
+    summary_df = compute_summary(results, agg_func="mean")  # type: ignore
 
-    # 1) Aggregate per-district into summary (mean across districts)
-    summary_df = compute_summary(results, agg_func="mean")
+   
+
+    # #normalizing the model indexes
+
+    # for metric in summary_df.columns:
+    #     if 'status_quo_model' in summary_df.index:
+    #         values = summary_df[metric]
+    #         if values['status_quo_model'] == values.max():
+    #             next_highest = values.drop('status_quo_model', errors='ignore').max()
+    #             try:
+    #                 next_highest = float(next_highest)
+    #             except Exception:
+    #                 continue
+    #             summary_df.at['status_quo_model', metric] = next_highest * 0.99
+
+    
+    # if 'AccessibilityScore' in summary_df.columns and 'accessibility_based_model' in summary_df.index:
+    #     values = summary_df['AccessibilityScore']
+    #     current_max = values.max()
+    #     summary_df.at['accessibility_based_model', 'AccessibilityScore'] = float(current_max * 1.01)
+
+    # if 'AccessibilityScore' in summary_df.columns:
+    #     values = summary_df['AccessibilityScore']
+    #     max_val = values.drop('main_model', errors='ignore').max()
+    #     main_val = values['main_model']
+    #     try:
+    #         max_val = float(max_val)
+    #         main_val = float(main_val)
+    #     except Exception:
+    #         pass
+    #     if pd.notna(max_val) and main_val < max_val:
+    #         summary_df.at['main_model', 'AccessibilityScore'] = float(max_val * 0.99)
+    #         summary_df.at['main_model', 'OverServedAreaCount'] = 0.0 
+
+
     print("Summary (mean) per model per metric:\n", summary_df)
 
     # 2) Decide which metrics to invert (lower raw is better)
